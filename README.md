@@ -4,13 +4,12 @@ Since I type with the "Dvorak" keyboard layout, the shortcuts such as ctrl-c, ct
 not comfortable anymore for the left hand. And even one of them require two hands to press.
 
 Furthermore, applications such as Intellij and Eclipse have their shortcuts, which I'm used to. So 
-for these shortcuts I prefer "Querty". Since there is no way to configure this, I had to intercept the 
-keys and remap the keys from "Dvorak" to "Querty" once CTRL, ALT, WIN or any of those combinations are pressed.
+for these shortcuts I prefer "Querty". Since there is no way to configure this, it is necessary to intercept the 
+keys and remap the keys from "Dvorak" to "Querty" when pressing CTRL, ALT, WIN or any of those combinations.
    
-With X.org I was reling on the wonderful tool from Kenton Varda, which I modified a bit, to make it work when 
-Numlock is active. Other than that, it worked as expected. And then came Wayland. 
+With X.org I was relying on the wonderful tool from Kenton Varda. And then came Wayland. 
 
-## Keyboard remapping with dvorak that works reliably with Wayland - make ctrl-c ctrl-c againv
+## Keyboard remapping with dvorak that works reliably with Wayland - make ctrl-c ctrl-c again
 
 XGrabKey() works partially with some application but not with others (e.g., gedit is not working). Since XGrabKey() 
 is an X.org function with some support in Wayland, I was looking for a more stable solution. After a quick 
