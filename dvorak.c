@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
 	
 	//fix is implemented, will make it to ubuntu sometimes in 1.9.4
 	//https://bugs.freedesktop.org/show_bug.cgi?id=101796
-	//quick workaround, sleep for 100ms...
+	//quick workaround, sleep for 200ms...
 	usleep(200 * 1000);
 	
 	if(ioctl(fdi, EVIOCGRAB, 1) == -1){
