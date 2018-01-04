@@ -1,4 +1,4 @@
-TARGET = prog
+TARGET = dvorak
 LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall
