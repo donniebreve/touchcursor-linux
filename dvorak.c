@@ -71,11 +71,11 @@
 #include <string.h>
 #include <stdio.h>
 
-/*static const char *const evval[3] = {
+static const char *const evval[3] = {
     "RELEASED",
     "PRESSED",
     "REPEATED"
-};*/
+};
 
 int emit(int fd, int type, int code, int val)
 {
@@ -155,8 +155,17 @@ int main(int argc, char* argv[]) {
 	
     struct input_event ev;
     ssize_t n;
-    int fdi, fdo, i, mod_state, mod_current, emit_counter;
+    int fdi, fdo, i, mod_state, mod_current, array_counter, code;
     struct uinput_user_dev uidev;
+    const char MAX_LENGTH = 32;
+    int array[MAX_LENGTH];
+
+    //init states
+    mod_state = 0;
+    array_counter = 0;
+    for(i=0;i<MAX_LENGTH;i++) {
+    	array[i] = 0;
+    }
 
 	//find the first input that exists
 	for (i = 1; i < argc; i++) {
@@ -194,14 +203,14 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "Cannot set ev bits, key: %s.\n", strerror(errno));
         return EXIT_FAILURE;
 	}
-	/*if(ioctl(fdo, UI_SET_EVBIT, EV_SYN) == -1) {
+	if(ioctl(fdo, UI_SET_EVBIT, EV_SYN) == -1) {
 		fprintf(stderr, "Cannot set ev bits, syn: %s.\n", strerror(errno));
         return EXIT_FAILURE;
 	}
 	if(ioctl(fdo, UI_SET_EVBIT, EV_MSC) == -1) {
 		fprintf(stderr, "Cannot set ev bits, msc: %s.\n", strerror(errno));
         return EXIT_FAILURE;
-	}*/
+	}
     
 	// All keys
     for (i = 0; i < KEY_MAX; i++) {
@@ -228,7 +237,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	
-	emit_counter = 0;
+	//TODO: clear array
 
 	while (1) {
         n = read(fdi, &ev, sizeof ev);
@@ -244,7 +253,7 @@ int main(int argc, char* argv[]) {
             break;
         }
 		if (ev.type == EV_KEY && ev.value >= 0 && ev.value <= 2) {
-			//printf("%s 0x%04x (%d)\n", evval[ev.value], (int)ev.code, (int)ev.code);
+			//printf("%s 0x%04x (%d), arr:%d\n", evval[ev.value], (int)ev.code, (int)ev.code, array_counter);
 			//map the keys
 			mod_current = modifier_bit(ev.code);
 			if(mod_current > 0) {
@@ -254,30 +263,50 @@ int main(int argc, char* argv[]) {
 					mod_state &= ~mod_current;
 				}	
 			}
-			//if emit_counter is larger than 0, we have pending
-			//pressed events, which needs to be handled in the dvorak
-			//layout, otherwise we have stuck keys
-			//there is still a theorectical chance to have stuck keys
-			//if a key release of an non-dvorak mapping is seen before
-			//a key release of a dvorak mapping. However, I have not
-			//seen this in practice, so it should not happen. If it does,
-			//then instead of an emit_counter, an array with the pressed
-			//dvorak keys have to be kept in order to release the right
-			//key
-			if(mod_state > 0 || emit_counter > 0) {
-				//printf("dvorak %d\n", emit_counter);
+
+			if(ev.code != qwerty2dvorak(ev.code) && (mod_state > 0 || array_counter > 0)) {
+				code = ev.code;
+				//printf("dvorak %d, %d\n", array_counter, mod_state);
 				if(ev.value==1) { //pressed
-					emit_counter++;
+					if(array_counter == MAX_LENGTH) {
+						printf("warning, too many keys pressed: %d. %s 0x%04x (%d), arr:%d\n",
+								MAX_LENGTH, evval[ev.value], (int)ev.code, (int)ev.code, array_counter);
+						//skip dvorak mapping
+					} else {
+						array[array_counter] = ev.code + 1; //0 means not mapped
+						array_counter++;
+						code = qwerty2dvorak(ev.code); // dvorak mapping
+					}
 				} else if(ev.value==0) { //released
-					emit_counter--;
+					//now we need to check if the code is in the array
+					//if it is, then the pressed key was in dvorak mode and
+					//we need to remove it from the array. The ctrl or alt
+					//key does not need to be pressed, when a key is released.
+					//A previous implementation only had a counter, which resulted
+					//occasionally in stuck keys.
+					for(i=0; i<array_counter; i++) {
+						if(array[i] == ev.code + 1) {
+							//found it, map it!
+							array[i] = 0;
+							code = qwerty2dvorak(ev.code); // dvorak mapping
+						}
+					}
+					//cleanup array counter
+					for(i=array_counter-1; i>=0; i--) {
+						if(array[i] == 0) {
+							array_counter--;
+						} else {
+							break;
+						}
+					}
 				}
-				emit(fdo, ev.type, qwerty2dvorak(ev.code), ev.value);
+				emit(fdo, ev.type, code, ev.value);
 			} else {
-				//printf("non dvorak %d\n", emit_counter);
+				//printf("non dvorak %d\n", array_counter);
 				emit(fdo, ev.type, ev.code, ev.value);
 			}
 		} else {
-			//printf("%d 0x%04x (%d)\n", ev.value, (int)ev.code, (int)ev.code);
+			//printf("Not key: %d 0x%04x (%d)\n", ev.value, (int)ev.code, (int)ev.code);
 			emit(fdo, ev.type, ev.code, ev.value);
 		}
     }
