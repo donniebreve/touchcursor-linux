@@ -22,11 +22,11 @@ The mapping does not work with Eclipse. Regular typing uses Dvorak, while the sh
 
 create binary with ```make dvorak```
 
-Make sure your user belongs to the group "input" as ```ls -la /dev/input``` is "input" group read-writeable
+Make sure your user belongs to the group "input" as ```ls -la /dev/input``` is "input" group read-writeable.
 
-This also applies for /dev/uinput in case its not uinput group read-writeable, add this [rule](https://github.com/tuomasjjrasanen/python-uinput/blob/master/udev-rules/40-uinput.rules)
+This also applies for /dev/uinput. In case its not uinput group read-writeable, add this [rule](https://github.com/tuomasjjrasanen/python-uinput/blob/master/udev-rules/40-uinput.rules) to /etc/udev/rules.d/. 
 
-Start it in startup applications (gnome-shell)
+Start it in startup applications (gnome-shell) by pointing to your keyboard device, i.e. `dvorak /dev/input/event2`.
 
 ## Related Links
 I used the following sites for inspiration:
