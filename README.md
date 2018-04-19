@@ -26,7 +26,7 @@ Make sure your user belongs to the group "input" as ```ls -la /dev/input``` is "
 
 This also applies for /dev/uinput. In case its not uinput group read-writeable, add this [rule](https://github.com/tuomasjjrasanen/python-uinput/blob/master/udev-rules/40-uinput.rules) to /etc/udev/rules.d/. 
 
-Start it in startup applications (gnome-shell) by pointing to your keyboard device, i.e. `dvorak /dev/input/event2`.
+Start it in startup applications (gnome-shell) by pointing to your keyboard device, i.e. `dvorak /dev/input/event2`. Or, if your device event number keeps changing, call the device id directly, i.e. `dvorak /dev/input/by-id/usb-Microsoft_Wired_Keyboard_400-event-kbd`, using your keyboard device id.
 
 ## Related Links
 I used the following sites for inspiration:
