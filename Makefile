@@ -22,3 +22,7 @@ $(TARGET): $(OBJECTS)
 clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
+
+install:
+	cp $(TARGET) /usr/bin/
+	cp 80-dvorak.rules /etc/udev/rules.d/

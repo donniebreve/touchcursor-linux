@@ -20,13 +20,17 @@ The mapping does not work with Eclipse. Regular typing uses Dvorak, while the sh
 
 ## Installation
 
-create binary with ```make dvorak```
+ * create binary with ```make```
+ * install it with ```sudo make install```
+ * reload udev rules ```sudo udevadm control --reload; sudo systemctl restart udev.service```
 
-Make sure your user belongs to the group "input" as ```ls -la /dev/input``` is "input" group read-writeable.
+This will copy 2 files: dvorak and 80-dvorak.rules
 
-This also applies for /dev/uinput. In case its not uinput group read-writeable, add this [rule](https://github.com/tuomasjjrasanen/python-uinput/blob/master/udev-rules/40-uinput.rules) to /etc/udev/rules.d/. 
+The file is triggered on the udev rule and call dvorak with the device that was attached. The rule contains
+the search term "keyb", that will match case insensitive the device name. Only a device with name that contains the substring
+"keyb" will be considered. To prevent an endless loop, the newly created virtual device is excluded from the mapping.
 
-Start it in startup applications (gnome-shell) by pointing to your keyboard device, i.e. `dvorak /dev/input/event2`. Or, if your device event number keeps changing, call the device id directly, i.e. `dvorak /dev/input/by-id/usb-Microsoft_Wired_Keyboard_400-event-kbd`, using your keyboard device id.
+That way, dvorak will be called whenever an input device is attached. 
 
 ## Related Links
 I used the following sites for inspiration:

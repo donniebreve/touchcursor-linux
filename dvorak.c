@@ -61,7 +61,7 @@
   * https://gist.github.com/toinsson/7e9fdd3c908b3c3d3cd635321d19d44d
   * 
   */
-
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -155,10 +155,21 @@ int main(int argc, char* argv[]) {
 	
     struct input_event ev;
     ssize_t n;
-    int fdi, fdo, i, mod_state, mod_current, array_counter, code;
+    int fdi, fdo, i, mod_state, mod_current, array_counter, code, name_ret;
     struct uinput_user_dev uidev;
     const char MAX_LENGTH = 32;
     int array[MAX_LENGTH];
+    char keyboard_name[256] = "Unknown";
+
+    //the name and ids of the virtual keyboard, we need to define this now, as we need to ignore this to prevent
+    //mapping the virtual keyboard
+
+    memset(&uidev, 0, sizeof(uidev));
+    snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "Virtual Dvorak Keyboard");
+    uidev.id.bustype = BUS_USB;
+    uidev.id.vendor  = 0x1234;
+    uidev.id.product = 0x5678;
+    uidev.id.version = 0;
 
     //init states
     mod_state = 0;
@@ -167,17 +178,38 @@ int main(int argc, char* argv[]) {
     	array[i] = 0;
     }
 
-	//find the first input that exists
-	for (i = 1; i < argc; i++) {
-		fdi = open(argv[i], O_RDONLY);
-		if (fdi != -1) {
-			break;
-		}
-	}
+	//get first input
+	fdi = open(argv[1], O_RDONLY);
 	if (fdi == -1) {
 		fprintf(stderr, "Cannot open any of the devices: %s.\n", strerror(errno));
 		return EXIT_FAILURE;
 	}
+	//
+    name_ret = ioctl(fdi, EVIOCGNAME(sizeof(keyboard_name)-1), keyboard_name);
+    if (name_ret < 0) {
+        fprintf(stderr, "Cannot get device name: %s.\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    if(strcasestr(keyboard_name, uidev.name) != NULL) {
+        fprintf(stderr, "Cannot get map the virtual device: %s.\n", keyboard_name);
+        return EXIT_FAILURE;
+    }
+
+    // match names, reuse name_ret
+    name_ret = -1;
+    for (i = 2; i < argc; i++) {
+        if(strcasestr(keyboard_name, argv[i]) != NULL) {
+            printf("found input: [%s]\n", keyboard_name);
+            name_ret = 0;
+            break;
+        }
+    }
+    if (name_ret < 0) {
+        fprintf(stderr, "Not a matching device: [%s]\n", keyboard_name);
+        return EXIT_FAILURE;
+    }
+
     
     fdo = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if(fdo == -1) {
@@ -220,12 +252,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	
-	memset(&uidev, 0, sizeof(uidev));
-    snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "Virtual Dvorak Keyboard");
-    uidev.id.bustype = BUS_USB;
-    uidev.id.vendor  = 0x1234;
-    uidev.id.product = 0x5678;
-    uidev.id.version = 0;
+
 
     if (write(fdo, &uidev, sizeof(uidev)) == -1) {
         fprintf(stderr, "Cannot set device data: %s.\n", strerror(errno));
