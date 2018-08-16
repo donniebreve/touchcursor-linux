@@ -22,15 +22,14 @@ The mapping does not work with Eclipse. Regular typing uses Dvorak, while the sh
 
  * create binary with ```make```
  * install it with ```sudo make install```
- * reload udev rules ```sudo udevadm control --reload; sudo systemctl restart udev.service```
 
-This will copy 2 files: dvorak and 80-dvorak.rules
+This will copy 3 files: dvorak, 80-dvorak.rules, and dvorak@.service
 
-The file is triggered on the udev rule and call dvorak with the device that was attached. The rule contains
+The file is triggered on the udev rule and call dvorak systemd service with the device that was attached. The rule contains
 the search term "keyb", that will match case insensitive the device name. Only a device with name that contains the substring
-"keyb" will be considered. To prevent an endless loop, the newly created virtual device is excluded from the mapping.
+"keyb" will be considered. To prevent an endless loop, the newly created virtual device is excluded from mapping itself.
 
-That way, dvorak will be called whenever an input device is attached. 
+That way, dvorak will be called whenever an input device is attached.
 
 ## Related Links
 I used the following sites for inspiration:

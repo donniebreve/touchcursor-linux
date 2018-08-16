@@ -1,0 +1,8 @@
+[Unit]
+Description=Dvorak Virtual Keyboard
+
+[Service]
+ExecStart=/usr/bin/dvorak /dev/input/%i keyb
+
+[Install]
+WantedBy=multi-user.target
