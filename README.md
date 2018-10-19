@@ -1,5 +1,8 @@
 # Thanks to
 [Thomas Bocek](https://github.com/tbocek). Check him out and thanks for the starting point.  
+[Touch Cursor](https://github.com/martin-stone/touchcursor). My favorite key remapping tool for coding.
+
+The goal of this project is to get touchcursor style input under wayland.
   
 Will update this readme soon...
 
