@@ -1,5 +1,5 @@
-# Forked from
-tbocek/dvorak. Check it out and thanks for the starting point.  
+# Thanks to
+[github.com/tbocek](Thomas Bocek). Check him out and thanks for the starting point.  
   
 Will update this readme soon...
 
