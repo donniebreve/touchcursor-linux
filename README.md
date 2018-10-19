@@ -1,3 +1,8 @@
+# Forked from
+tbocek/dvorak. Check it out and thanks for the starting point.  
+  
+Will update this readme soon...
+
 # Dvorak <> Qwerty - Keyboard remapping for Linux when pressing CTRL or ALT
 
 Since I type with the "Dvorak" keyboard layout, the shortcuts such as ctrl-c, ctrl-x, or ctrl-v are 
