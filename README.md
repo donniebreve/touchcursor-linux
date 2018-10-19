@@ -1,5 +1,5 @@
 # Thanks to
-[github.com/tbocek](Thomas Bocek). Check him out and thanks for the starting point.  
+[Thomas Bocek](https://github.com/tbocek). Check him out and thanks for the starting point.  
   
 Will update this readme soon...
 
