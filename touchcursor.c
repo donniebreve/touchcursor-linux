@@ -64,26 +64,26 @@ static int convertInput(int key)
 int main(int argc, char* argv[])
 {
     // Set the user id 
-	if (setuid(0) < 0)
+    if (setuid(0) < 0)
     {
         fprintf(stderr, "error: setuid(0) failed: %s.\n", strerror(errno));
         return EXIT_FAILURE;
     }
-	// Check the argument count
-	if(argc < 2)
+    // Check the argument count
+    if(argc < 2)
     {
         fprintf(stderr, "error: please specify the input device found in /dev/input/by-id/\n");
         return EXIT_FAILURE;
-	}
+    }
 
-	// Open the keyboard device
-	int input = open(argv[1], O_RDONLY);
-	if (input < 0)
+    // Open the keyboard device
+    int input = open(argv[1], O_RDONLY);
+    if (input < 0)
     {
         fprintf(stderr, "error: cannot open the input device: %s.\n", strerror(errno));
-		return EXIT_FAILURE;
-	}
-	// Retrieve the device name
+        return EXIT_FAILURE;
+    }
+    // Retrieve the device name
     char keyboardName[256] = "Unknown";
     if (ioctl(input, EVIOCGNAME(sizeof(keyboardName) - 1), keyboardName) < 0)
     {
@@ -100,18 +100,16 @@ int main(int argc, char* argv[])
         fprintf(stderr, "error: cannot attach to the virtual device: %s.\n", strerror(errno));
         return EXIT_FAILURE;
     }
-
     // Allow last key press to go through
-    // Grabbing the keys too quickly causes a never ending stream of key down events
+    // Grabbing the keys too quickly prevents the last key up event from being sent
     // https://bugs.freedesktop.org/show_bug.cgi?id=101796
     usleep(200 * 1000);
-
     // Grab keys from the input device
-	if (ioctl(input, EVIOCGRAB, 1) < 0)
+    if (ioctl(input, EVIOCGRAB, 1) < 0)
     {
         fprintf(stderr, "error: EVIOCGRAB: %s.\n", strerror(errno));
         return EXIT_FAILURE;
-	}
+    }
 
     // Define the virtual keyboard
     struct uinput_user_dev virtualKeyboard;
@@ -128,8 +126,7 @@ int main(int argc, char* argv[])
     {
         fprintf(stderr, "error: failed to open /dev/uinput: %s.\n", strerror(errno));
         return EXIT_FAILURE;
-	}
-
+    }
     // Enable key press/release event
     if (ioctl(output, UI_SET_EVBIT, EV_KEY) < 0)
     {
@@ -141,9 +138,9 @@ int main(int argc, char* argv[])
         if (ioctl(output, UI_SET_KEYBIT, i) < 0)
         {
             fprintf(stderr, "error: cannot set key bit: %s.\n", strerror(errno));
-			return EXIT_FAILURE;
-		}
-	}
+            return EXIT_FAILURE;
+        }
+    }
     // Enable synchronization event
     if (ioctl(output, UI_SET_EVBIT, EV_SYN) < 0)
     {
@@ -163,7 +160,7 @@ int main(int argc, char* argv[])
     int hyper = 0;
     int keyPressed = 0;
     struct input_event inputEvent;
-	while (1)
+    while (1)
     {
         ssize_t result = read(input, &inputEvent, sizeof(inputEvent));   
         if (result == (ssize_t) - 1)
@@ -184,11 +181,13 @@ int main(int argc, char* argv[])
             errno = EIO;
             break;
         }
+
         // We only want key presses
         if (inputEvent.type != EV_KEY || (inputEvent.value != 0 && inputEvent.value != 1 && inputEvent.value != 2)) continue;
 
         //fprintf(stdout, "input - type: %i, code: %i, value: %i\n", inputEvent.type, inputEvent.code, inputEvent.value);
 
+        // If the space bar is pressed down
         if (inputEvent.code == 57)
         {
             if (inputEvent.value == 1)
@@ -197,7 +196,7 @@ int main(int argc, char* argv[])
                 keyPressed = 0;
                 continue;
             }
-            if (inputEvent.value ==2)
+            if (inputEvent.value == 2)
             {
                 continue;
             }
