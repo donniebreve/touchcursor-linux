@@ -27,3 +27,6 @@ m - del
 ```
 sudo setcap cap_sys_admin+ep binary
 ```
+
+# Special note
+This application works under Wayland :)
