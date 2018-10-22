@@ -19,5 +19,11 @@ m - del
 ```
 
 # To do
+* Add a keybuffer to correctly handle quick typing
+* Pull logic out of the main file for portability to other platforms
 * Make the keymapping configurable
 * Make the application launch when the computer is booted up
+* Change setuid(0) to setcap in the Makefile
+```
+sudo setcap cap_sys_admin+ep binary
+```
