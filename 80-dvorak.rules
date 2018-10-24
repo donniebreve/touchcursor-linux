@@ -1,1 +1,0 @@
-SUBSYSTEM=="input", ACTION=="add", RUN+="/bin/systemctl start dvorak@%k.service"

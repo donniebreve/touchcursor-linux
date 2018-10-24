@@ -1,6 +1,2 @@
-/dvorak
-/dvorak.o
-/.cproject
-/.project
-/.settings/
-.idea
+touchcursor
+.vscode

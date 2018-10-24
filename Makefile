@@ -1,4 +1,4 @@
-TARGET = dvorak
+TARGET = touchcursor
 LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall

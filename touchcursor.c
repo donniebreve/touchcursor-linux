@@ -20,6 +20,10 @@
 #include <linux/uinput.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
+
+// The output device
+int output;
 
 /**
 * Emits a key event
@@ -37,25 +41,195 @@ int emit(int fileDescriptor, int type, int code, int value)
 }
 
 /**
-* Converts input key to touch cursor key
-* To do: make this configurable
-*/
-static int convertInput(int key)
+ * Converts input key to touch cursor key
+ * To do: make this configurable
+ */
+int convertInput(int key)
 {
     switch (key)
     {
-        case 23: return 103; // i - up
-        case 36: return 105; // j - left
-        case 37: return 108; // k - down
-        case 38: return 106; // l - right
-        case 22: return 102; // u - home
-        case 24: return 107; // o - end
-        case 25: return 14;  // p - backspace
-        case 35: return 104; // h - page up
-        case 49: return 109; // n - page down
-        case 50: return 111; // m - del
+        case KEY_I: return KEY_UP;
+        case KEY_J: return KEY_LEFT;
+        case KEY_K: return KEY_DOWN;
+        case KEY_L: return KEY_RIGHT;
+        case KEY_U: return KEY_HOME;
+        case KEY_O: return KEY_END;
+        case KEY_P: return KEY_BACKSPACE;
+        case KEY_H: return KEY_PAGEUP;
+        case KEY_N: return KEY_PAGEDOWN;
+        case KEY_M: return KEY_DELETE;
         default: return key;
     }
+}
+
+/**
+ * Converts input key to touch cursor key
+ * To do: make this configurable
+ */
+int isMapped(int key)
+{
+    switch (key)
+    {
+        case KEY_I:
+        case KEY_J:
+        case KEY_K:
+        case KEY_L:
+        case KEY_U:
+        case KEY_O:
+        case KEY_P:
+        case KEY_H:
+        case KEY_N:
+        case KEY_M:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+/**
+* Checks if the key is a modifier key.
+*/
+int isModifier(int key)
+{
+    switch (key)
+    {
+        case KEY_ESC:
+        case KEY_BACKSPACE:
+        case KEY_TAB:
+        case KEY_ENTER:
+        case KEY_LEFTCTRL:
+        case KEY_GRAVE:
+        case KEY_LEFTSHIFT:
+        case KEY_RIGHTSHIFT:
+        case KEY_LEFTALT:
+        case KEY_CAPSLOCK:
+        case KEY_F1:
+        case KEY_F2:
+        case KEY_F3:
+        case KEY_F4:
+        case KEY_F5:
+        case KEY_F6:
+        case KEY_F7:
+        case KEY_F8:
+        case KEY_F9:
+        case KEY_F10:
+        case KEY_NUMLOCK:
+        case KEY_SCROLLLOCK:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int hyper = 0; // if the hyper key is pressed or not
+int hyperEmitted = 0; // if the hyper key down has been emitted
+int mappedKeyPressed = 0; // if a mapped key was pressed
+int captured = 0; // if a mapped key has been captured
+int captureEmitted = 0; // if the captured mapped key has been emitted
+struct input_event capturedEvent; // the mapped key down captured event
+
+/*
+ * Process the key event. Returns true if the key should be discarded.
+ */
+int processKey(struct input_event inputEvent)
+{
+    if (inputEvent.code == 57)
+    {
+        if (inputEvent.value == 2)
+        {
+            return 1;
+        }
+        if (inputEvent.value == 1)
+        {
+            hyper = 1;
+            hyperEmitted = 0;
+            mappedKeyPressed = 0;
+            captured = 0;
+            captureEmitted = 0;
+            return 1;
+        }
+        if (inputEvent.value == 0)
+        {
+            if (!hyperEmitted && !mappedKeyPressed)
+            {
+                emit(output, EV_KEY, KEY_SPACE, 1);
+                emit(output, EV_SYN, 0, 0);
+            }
+            if (captured && !captureEmitted)
+            {
+                emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
+                emit(output, EV_SYN, 0, 0);
+            }
+            hyper = 0;
+        }
+    }
+    if (hyper)
+    {
+        if (inputEvent.value == 1 || inputEvent.value == 2)
+        {
+            if (isMapped(inputEvent.code))
+            {
+                mappedKeyPressed = 1;
+                if (!captured)
+                {
+                    inputEvent.code = convertInput(inputEvent.code);
+                    capturedEvent = inputEvent;
+                    captured = 1;
+                    return 1;
+                }
+                else
+                {
+                    if (!captureEmitted)
+                    {
+                        emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
+                        emit(output, EV_SYN, 0, 0);
+                        captureEmitted = 1;
+                    }
+                    emit(output, EV_KEY, convertInput(inputEvent.code), inputEvent.value);
+                    return 1;
+                }
+            }
+            else
+            {
+                if (!hyperEmitted)
+                {
+                    emit(output, EV_KEY, KEY_SPACE, 1);
+                    emit(output, EV_SYN, 0, 0);
+                    hyperEmitted = 1;
+                }
+            }
+        }
+        if (inputEvent.value == 0)
+        {
+            if (isMapped(inputEvent.code))
+            {
+                if (captured && !captureEmitted)
+                {
+                    emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
+                    emit(output, EV_SYN, 0, 0);
+                    captureEmitted = 1;
+                }
+                emit(output, EV_KEY, convertInput(inputEvent.code), inputEvent.value);
+                return 1;
+            }
+            else
+            {
+                if (!hyperEmitted)
+                {
+                    emit(output, EV_KEY, KEY_SPACE, 1);
+                    emit(output, EV_SYN, 0, 0);
+                    hyperEmitted = 1;
+                }
+                if (captured && !captureEmitted)
+                {
+                    emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
+                    emit(output, EV_SYN, 0, 0);
+                    captureEmitted = 1;
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 /**
@@ -121,7 +295,7 @@ int main(int argc, char* argv[])
     virtualKeyboard.id.version = 1;
 
     // Open the output
-    int output = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+    output = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if (output < 0)
     {
         fprintf(stderr, "error: failed to open /dev/uinput: %s.\n", strerror(errno));
@@ -157,12 +331,11 @@ int main(int argc, char* argv[])
         fprintf(stderr, "error: ioctl: UI_DEV_CREATE: %s\n", strerror(errno));
     }
     
-    int hyper = 0;
-    int keyPressed = 0;
     struct input_event inputEvent;
+    ssize_t result;
     while (1)
     {
-        ssize_t result = read(input, &inputEvent, sizeof(inputEvent));   
+        result = read(input, &inputEvent, sizeof(inputEvent));
         if (result == (ssize_t) - 1)
         {
             if (errno == EINTR)
@@ -174,7 +347,7 @@ int main(int argc, char* argv[])
         if (result == (ssize_t)0)
         {
             errno = ENOENT;
-            break;                
+            break;
         }
         if (result != sizeof(inputEvent))
         {
@@ -182,48 +355,21 @@ int main(int argc, char* argv[])
             break;
         }
 
-        // We only want key presses
-        if (inputEvent.type != EV_KEY || (inputEvent.value != 0 && inputEvent.value != 1 && inputEvent.value != 2)) continue;
-
-        //fprintf(stdout, "input - type: %i, code: %i, value: %i\n", inputEvent.type, inputEvent.code, inputEvent.value);
-
-        // If the space bar is pressed down
-        if (inputEvent.code == 57)
+        int discard = 0;
+        // We only want to manipulate key presses
+        if (inputEvent.type == EV_KEY
+            && (inputEvent.value == 0 || inputEvent.value == 1 || inputEvent.value == 2)
+            && !isModifier(inputEvent.code))
         {
-            if (inputEvent.value == 1)
-            {
-                hyper = 1;
-                keyPressed = 0;
-                continue;
-            }
-            if (inputEvent.value == 2)
-            {
-                continue;
-            }
-            if (inputEvent.value == 0)
-            {
-                hyper = 0;
-                if (keyPressed == 0)
-                {
-                    emit(output, inputEvent.type, inputEvent.code, 1);
-                    emit(output, inputEvent.type, inputEvent.code, 0);
-                    emit(output, EV_SYN, 0, 0);
-                }
-                continue;
-            }
+            discard = processKey(inputEvent);
         }
-        if (hyper == 1)
+        // Emit the key
+        if (!discard)
         {
-            inputEvent.code = convertInput(inputEvent.code);
-            if (inputEvent.value == 1 || inputEvent.value == 2)
-            {
-                keyPressed = 1;
-            }
+            emit(output, inputEvent.type, inputEvent.code, inputEvent.value);
+            emit(output, EV_SYN, 0, 0);
         }
-
-        //fprintf(stdout, "output - type: %i, code: %i, value: %i\n", inputEvent.type, inputEvent.code, inputEvent.value);
-
-        emit(output, inputEvent.type, inputEvent.code, inputEvent.value);
-        emit(output, EV_SYN, 0, 0);
     }
 }
+
+//fprintf(stdout, "input - type: %i, code: %i, value: %i\n", inputEvent.type, inputEvent.code, inputEvent.value);
