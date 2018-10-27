@@ -255,7 +255,7 @@ void processKey(int type, int code, int value)
             {
                 if (isDown(value))
                 {
-                    enqueue(convert(code));
+                    enqueue(code);
                     emit(EV_KEY, convert(code), value);
                 }
                 else
@@ -269,4 +269,5 @@ void processKey(int type, int code, int value)
             }
             break;
     }
+    printf("state %i\n", state);
 }

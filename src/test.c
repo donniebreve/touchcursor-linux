@@ -171,6 +171,20 @@ static int testFastTyping()
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
+    // Space down, mapped1 down, mapped2 down, mapped3 down, space up, mapped1 up, mapped2 up, mapped3 up
+    // The mapped keys should be sent converted
+    // Extra up events are sent, but that does not matter
+    description = "sd, m1d, m2d, m3d, su, m1u, m2u, m3u";
+    expected    = "105:1 103:1 106:1 105:0 103:0 106:0 36:0 23:0 38:0 ";
+    type(16, KEY_SPACE, 1, KEY_J, 1, KEY_I, 1, KEY_L, 1, KEY_SPACE, 0, KEY_J, 0, KEY_I, 0, KEY_L, 0);
+    if (strcmp(expected, output) != 0) {
+        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
+        return 1;
+    }
+    else {
+        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
+    }
+
     return 0;
 }
 
