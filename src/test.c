@@ -11,10 +11,15 @@
 #define mu_run_test(test) do { int result = test(); tests_run++; if (result != 0) return result; } while (0)
 static int tests_run;
 
+// String for the full key event output
 static char output[256];
+
+// String for the emit function output
 static char emitString[8];
 
-// Different emit function
+/*
+ * Override of the emit function.
+ */
 int emit(int type, int code, int value)
 {
     sprintf(emitString, "%i:%i ", code, value);
@@ -22,9 +27,13 @@ int emit(int type, int code, int value)
     return 0;
 }
 
+// Now include touchcursor
 #include "touchcursor.h"
 
-// Should take code:value pairs
+/*
+ * Simulates typing keys.
+ * The method arguments should be number of arguments, then pairs of key code and key value.
+ */
 static void type(int num, ...)
 {
     for (int i = 0; i < 256; i++) output[i] = 0;
@@ -39,6 +48,10 @@ static void type(int num, ...)
     va_end(arguments);
 }
 
+/*
+ * Tests for normal (slow) typing.
+ * These tests should rarely have overlapping key events.
+ */
 static int testNormalTyping()
 {
     // Space down, up
@@ -128,6 +141,10 @@ static int testNormalTyping()
     return 0;
 }
 
+/*
+ * Tests for fast typing.
+ * These tests should have many overlapping key events.
+ */
 static int testFastTyping()
 {
     // Space down, mapped down, space up, mapped up
@@ -188,6 +205,9 @@ static int testFastTyping()
     return 0;
 }
 
+/*
+ * Simple method for running all tests.
+ */
 static int runTests()
 {
     mu_run_test(testNormalTyping);
@@ -199,6 +219,9 @@ static int runTests()
     return 0;
 }
 
+/*
+ * Main method.
+ */
 int main()
 {
     int result = runTests();
@@ -207,227 +230,179 @@ int main()
     printf("Tests run: %d\n", tests_run);
 }
 
+// Sample tests from touchcursor source
 
-    
+// normal (slow) typing
+// CHECK((SP, up,  SP,up, 0));
+// CHECK((SP, dn,  SP,up, 0));
+// CHECK((SP, up,  SP,up, SP,dn, SP,up, 0));
+// CHECK((x, dn,   SP,up, SP,dn, SP,up, x,dn, 0));
+// CHECK((x, up,   SP,up, SP,dn, SP,up, x,dn, x,up, 0));
+// CHECK((j, dn,   SP,up, SP,dn, SP,up, x,dn, x,up, j,dn, 0));
+// CHECK((j, up,   SP,up, SP,dn, SP,up, x,dn, x,up, j,dn, j,up, 0));
 
-    // struct Tester {
-        // Tester() {
-            // isInUnitTest = true;
-            // Options oldOptions = options;
-            // options = Options(Options::defaults);
+// overlapped slightly
+// resetOutput();
+// CHECK((SP, dn,  0));
+// CHECK((x, dn,   SP,dn, x,dn, 0));
+// CHECK((SP, up,  SP,dn, x,dn, SP,up, 0));
+// CHECK((x, up,   SP,dn, x,dn, SP,up, x,up, 0));
 
-            // assert(isExtendedKey(VK_LEFT));
-            // assert(isExtendedKey(VK_RMENU));
-            // assert(!isExtendedKey(VK_F1));
-            // assert(!isExtendedKey(0));
+//... plus repeating spaces
+// CHECK((SP, dn,  0));
+// CHECK((SP, dn,  0));
+// CHECK((j, dn,   0));
+// CHECK((SP, dn,  0));
+// CHECK((SP, up,  SP,dn, j,dn, SP,up, 0));
+// CHECK((j, up,   SP,dn, j,dn, SP,up, j,up, 0));
 
-            // normal (slow) typing
-            //resetOutput();
-            //CHECK((SP, up,  SP,up, 0));
-            //CHECK((SP, dn,  SP,up, 0));
-            //CHECK((SP, up,  SP,up, SP,dn, SP,up, 0));
-            //CHECK((x, dn,   SP,up, SP,dn, SP,up, x,dn, 0));
-            //CHECK((x, up,   SP,up, SP,dn, SP,up, x,dn, x,up, 0));
-            //CHECK((j, dn,   SP,up, SP,dn, SP,up, x,dn, x,up, j,dn, 0));
-            //CHECK((j, up,   SP,up, SP,dn, SP,up, x,dn, x,up, j,dn, j,up, 0));
+// key ups in waitMappedDown
+// CHECK((SP, dn,  0));
+// CHECK((x, up,   x,up, 0));
+// CHECK((j, up,   x,up, j,up, 0));
+// CHECK((SP, up,  x,up, j,up, SP,dn, SP,up, 0));
 
+// other keys in waitMappedUp
+// CHECK((SP, dn,  0));
+// CHECK((j, dn,   0));
+// CHECK((x, up,   SP,dn, j,dn, x,up, 0));
+// CHECK((x, dn,   SP,dn, j,dn, x,up, x,dn, 0));
+// CHECK((j, dn,   SP,dn, j,dn, x,up, x,dn, j,dn, 0));
+// CHECK((SP, up,  SP,dn, j,dn, x,up, x,dn, j,dn, SP,up, 0));
 
-            
-            
-            
-            // // overlapped slightly
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((x, dn,   SP,dn, x,dn, 0));
-            // CHECK((SP, up,  SP,dn, x,dn, SP,up, 0));
-            // CHECK((x, up,   SP,dn, x,dn, SP,up, x,up, 0));
+// CHECK((SP, dn,  0));
+// CHECK((j, dn,   0));
+// CHECK((x, dn,   SP,dn, j,dn, x,dn, 0));
+// CHECK((SP, up,  SP,dn, j,dn, x,dn, SP,up, 0));
 
-            // //... plus repeating spaces
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((SP, dn,  0));
-            // CHECK((j, dn,   0));
-            // CHECK((SP, dn,  0));
-            // CHECK((SP, up,  SP,dn, j,dn, SP,up, 0));
-            // CHECK((j, up,   SP,dn, j,dn, SP,up, j,up, 0));
+// activate mapping
+// CHECK((SP, dn,  0));
+// CHECK((j, dn,   0));
+// CHECK((j, up,   LE,edn, LE,up, 0));
+// CHECK((SP, up,  LE,edn, LE,up, 0));
 
-            // // key ups in waitMappedDown
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((x, up,   x,up, 0));
-            // CHECK((j, up,   x,up, j,up, 0));
-            // CHECK((SP, up,  x,up, j,up, SP,dn, SP,up, 0));
+// autorepeat into mapping, and out
+// CHECK((SP, dn,  0));
+// CHECK((j, dn,   0));
+// CHECK((j, dn,   LE,edn, LE,edn, 0));
+// CHECK((j, dn,   LE,edn, LE,edn, LE,edn, 0));
+// CHECK((j, up,   LE,edn, LE,edn, LE,edn, LE,up, 0));
+// CHECK((SP, dn,  LE,edn, LE,edn, LE,edn, LE,up, 0));
+// CHECK((j, dn,   LE,edn, LE,edn, LE,edn, LE,up, LE,edn, 0));
+// CHECK((SP, up,  LE,edn, LE,edn, LE,edn, LE,up, LE,edn, LE,up, 0));
+// CHECK((j, dn,   LE,edn, LE,edn, LE,edn, LE,up, LE,edn, LE,up, j,dn, 0));
+// CHECK((j, up,   LE,edn, LE,edn, LE,edn, LE,up, LE,edn, LE,up, j,dn, j,up, 0));
 
-            // // other keys in waitMappedUp
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((j, dn,   0));
-            // CHECK((x, up,   SP,dn, j,dn, x,up, 0));
-            // CHECK((x, dn,   SP,dn, j,dn, x,up, x,dn, 0));
-            // CHECK((j, dn,   SP,dn, j,dn, x,up, x,dn, j,dn, 0));
-            // CHECK((SP, up,  SP,dn, j,dn, x,up, x,dn, j,dn, SP,up, 0));
+// other keys during mapping
+// CHECK((SP, dn,  0));
+// CHECK((j, dn,   0));
+// CHECK((j, up,   LE,edn, LE,up, 0));
+// CHECK((x, dn,   LE,edn, LE,up, x,dn, 0));
+// CHECK((x, up,   LE,edn, LE,up, x,dn, x,up, 0));
+// CHECK((j, dn,   LE,edn, LE,up, x,dn, x,up, LE,edn, 0));
+// CHECK((SP, up,  LE,edn, LE,up, x,dn, x,up, LE,edn, LE,up, 0));
 
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((j, dn,   0));
-            // CHECK((x, dn,   SP,dn, j,dn, x,dn, 0));
-            // CHECK((SP, up,  SP,dn, j,dn, x,dn, SP,up, 0));
+// check space-emmitted states
+// CHECK((SP, dn,  0));
+// CHECK((x, dn,   SP,dn, x,dn, 0));
+// CHECK((SP, dn,  SP,dn, x,dn, 0));
+// CHECK((x, dn,   SP,dn, x,dn, x,dn, 0));
+// CHECK((x, up,   SP,dn, x,dn, x,dn, x,up, 0));
+// CHECK((j, up,   SP,dn, x,dn, x,dn, x,up, j,up, 0));
+// CHECK((j, dn,   SP,dn, x,dn, x,dn, x,up, j,up, 0));
+// CHECK((j, up,   SP,dn, x,dn, x,dn, x,up, j,up, LE,edn, LE,up, 0));
+// CHECK((SP, up,  SP,dn, x,dn, x,dn, x,up, j,up, LE,edn, LE,up, 0)); //XXX should this emit a space (needs mappingSpaceEmitted state)
 
+// wmuse
+// CHECK((SP, dn,  0));
+// CHECK((x, dn,   SP,dn, x,dn, 0));
+// CHECK((j, dn,   SP,dn, x,dn, 0));
+// CHECK((SP, dn,  SP,dn, x,dn, 0));
+// CHECK((SP, up,  SP,dn, x,dn, j,dn, SP,up, 0));
 
-            // // activate mapping
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((j, dn,   0));
-            // CHECK((j, up,   LE,edn, LE,up, 0));
-            // CHECK((SP, up,  LE,edn, LE,up, 0));
+// CHECK((SP, dn,  0));
+// CHECK((x, dn,   SP,dn, x,dn, 0));
+// CHECK((j, dn,   SP,dn, x,dn, 0));
+// CHECK((j, dn,   SP,dn, x,dn, LE,edn, LE,edn, 0));
+// CHECK((SP, up,  SP,dn, x,dn, LE,edn, LE,edn, LE,up, 0)); //XXX should this emit a space (needs mappingSpaceEmitted state)
 
-            // // autorepeat into mapping, and out
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((j, dn,   0));
-            // CHECK((j, dn,   LE,edn, LE,edn, 0));
-            // CHECK((j, dn,   LE,edn, LE,edn, LE,edn, 0));
-            // CHECK((j, up,   LE,edn, LE,edn, LE,edn, LE,up, 0));
-            // CHECK((SP, dn,  LE,edn, LE,edn, LE,edn, LE,up, 0));
-            // CHECK((j, dn,   LE,edn, LE,edn, LE,edn, LE,up, LE,edn, 0));
-            // CHECK((SP, up,  LE,edn, LE,edn, LE,edn, LE,up, LE,edn, LE,up, 0));
-            // CHECK((j, dn,   LE,edn, LE,edn, LE,edn, LE,up, LE,edn, LE,up, j,dn, 0));
-            // CHECK((j, up,   LE,edn, LE,edn, LE,edn, LE,up, LE,edn, LE,up, j,dn, j,up, 0));
+// CHECK((SP, dn,  0));
+// CHECK((x, dn,   SP,dn, x,dn, 0));
+// CHECK((j, dn,   SP,dn, x,dn, 0));
+// CHECK((x, up,   SP,dn, x,dn, x,up, 0));
+// CHECK((j, up,   SP,dn, x,dn, x,up, LE,edn, LE,up, 0));
+// CHECK((SP, up,  SP,dn, x,dn, x,up, LE,edn, LE,up, 0)); //XXX should this emit a space (needs mappingSpaceEmitted state)
 
-            // // other keys during mapping
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((j, dn,   0));
-            // CHECK((j, up,   LE,edn, LE,up, 0));
-            // CHECK((x, dn,   LE,edn, LE,up, x,dn, 0));
-            // CHECK((x, up,   LE,edn, LE,up, x,dn, x,up, 0));
-            // CHECK((j, dn,   LE,edn, LE,up, x,dn, x,up, LE,edn, 0));
-            // CHECK((SP, up,  LE,edn, LE,up, x,dn, x,up, LE,edn, LE,up, 0));
+// run configure tests
+// idle
+// CHECK((F5, dn,  F5,dn, 0)); 
+// CHECK((SP, dn,  F5,dn, 0)); 
+// wmd
+// CHECK((F5, dn,  F5,dn, '*',dn, 0)); 
+// CHECK((F5, up,  F5,dn, '*',dn, F5,up, 0));
+// CHECK((j, dn,   F5,dn, '*',dn, F5,up, 0));
+// wmu
+// CHECK((F5, dn,  F5,dn, '*',dn, F5,up, '*',dn, 0));
+// CHECK((j, up,   F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, 0));
+// mapping
+// CHECK((F5, dn,  F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, '*',dn, 0));
+// CHECK((SP, up,  F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, '*',dn, 0));
 
-            // // check space-emmitted states
-            // // wmdse
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((x, dn,   SP,dn, x,dn, 0));
-            // CHECK((SP, dn,  SP,dn, x,dn, 0));
-            // CHECK((x, dn,   SP,dn, x,dn, x,dn, 0));
-            // CHECK((x, up,   SP,dn, x,dn, x,dn, x,up, 0));
-            // CHECK((j, up,   SP,dn, x,dn, x,dn, x,up, j,up, 0));
-            // CHECK((j, dn,   SP,dn, x,dn, x,dn, x,up, j,up, 0));
-            // CHECK((j, up,   SP,dn, x,dn, x,dn, x,up, j,up, LE,edn, LE,up, 0));
-            // CHECK((SP, up,  SP,dn, x,dn, x,dn, x,up, j,up, LE,edn, LE,up, 0)); //XXX should this emit a space (needs mappingSpaceEmitted state)
+// CHECK((SP, dn,  0)); 
+// wmd
+// CHECK((x, dn,   SP,dn, x,dn, 0));
+// wmd-se
+// CHECK((F5, dn,  SP,dn, x,dn, '*',dn, 0));
+// CHECK((j, dn,   SP,dn, x,dn, '*',dn, 0));
+// wmu-se
+// CHECK((F5, dn,  SP,dn, x,dn, '*',dn, '*',dn, 0));
+// CHECK((SP, up,  SP,dn, x,dn, '*',dn, '*',dn, j,dn, SP,up, 0));
 
-            // // wmuse
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((x, dn,   SP,dn, x,dn, 0));
-            // CHECK((j, dn,   SP,dn, x,dn, 0));
-            // CHECK((SP, dn,  SP,dn, x,dn, 0));
-            // CHECK((SP, up,  SP,dn, x,dn, j,dn, SP,up, 0));
+// Overlapping mapped keys
+// CHECK((SP, dn,  0));
+// CHECK((m, dn,   0));
+// CHECK((j, dn,   DEL,edn, LE,edn, 0));
+// CHECK((j, up,   DEL,edn, LE,edn, LE,up, 0));
+// CHECK((m, up,   DEL,edn, LE,edn, LE,up, DEL,up, 0));
+// CHECK((SP, up,  DEL,edn, LE,edn, LE,up, DEL,up, 0));
 
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((x, dn,   SP,dn, x,dn, 0));
-            // CHECK((j, dn,   SP,dn, x,dn, 0));
-            // CHECK((j, dn,   SP,dn, x,dn, LE,edn, LE,edn, 0));
-            // CHECK((SP, up,  SP,dn, x,dn, LE,edn, LE,edn, LE,up, 0)); //XXX should this emit a space (needs mappingSpaceEmitted state)
+// Overlapping mapped keys -- space up first.
+// should release held mapped keys.  (Fixes sticky Shift bug.)
+// CHECK((SP, dn,  0));
+// CHECK((m, dn,   0));
+// CHECK((j, dn,   DEL,edn, LE,edn, 0));
+// release order is in vk code order
+// CHECK((SP, up,  DEL,edn, LE,edn, LE,up, DEL,up, 0));
 
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((x, dn,   SP,dn, x,dn, 0));
-            // CHECK((j, dn,   SP,dn, x,dn, 0));
-            // CHECK((x, up,   SP,dn, x,dn, x,up, 0));
-            // CHECK((j, up,   SP,dn, x,dn, x,up, LE,edn, LE,up, 0));
-            // CHECK((SP, up,  SP,dn, x,dn, x,up, LE,edn, LE,up, 0)); //XXX should this emit a space (needs mappingSpaceEmitted state)
-            
-            // // run configure tests
-            // resetOutput();
-            // //idle
-            // CHECK((F5, dn,  F5,dn, 0)); 
-            // CHECK((SP, dn,  F5,dn, 0)); 
-            // // wmd
-            // CHECK((F5, dn,  F5,dn, '*',dn, 0)); 
-            // CHECK((F5, up,  F5,dn, '*',dn, F5,up, 0));
-            // CHECK((j, dn,   F5,dn, '*',dn, F5,up, 0));
-            // // wmu
-            // CHECK((F5, dn,  F5,dn, '*',dn, F5,up, '*',dn, 0));
-            // CHECK((j, up,   F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, 0));
-            // // mapping
-            // CHECK((F5, dn,  F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, '*',dn, 0));
-            // CHECK((SP, up,  F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, '*',dn, 0));
+// mapped modifier keys
+// options.keyMapping['C'] = ctrlFlag | 'C'; // ctrl+c
+// CHECK((SP, dn,  0));
+// CHECK((c, dn,   0));
+// CHECK((c, up,   ctrl,dn, c,dn, ctrl,up, c,up, 0));
+// CHECK((c, dn,   ctrl,dn, c,dn, ctrl,up, c,up, ctrl,dn, c,dn, ctrl,up, 0));
+// CHECK((c, up,   ctrl,dn, c,dn, ctrl,up, c,up, ctrl,dn, c,dn, ctrl,up, c,up, 0));
+// CHECK((SP, up,  ctrl,dn, c,dn, ctrl,up, c,up, ctrl,dn, c,dn, ctrl,up, c,up, 0));
+// with modifier already down:
+// CHECK((SP, dn,  0));
+// CHECK((ctrl,dn, ctrl,dn, 0));
+// CHECK((c, dn,   ctrl,dn, 0));
+// CHECK((c, up,   ctrl,dn, c,dn, c,up, 0));
+// CHECK((ctrl,up, ctrl,dn, c,dn, c,up, ctrl,up, 0));
+// CHECK((SP,up,   ctrl,dn, c,dn, c,up, ctrl,up, 0));
 
-            // resetOutput();
-            // CHECK((SP, dn,  0)); 
-            // // wmd
-            // CHECK((x, dn,   SP,dn, x,dn, 0));
-            // // wmd-se
-            // CHECK((F5, dn,  SP,dn, x,dn, '*',dn, 0));
-            // CHECK((j, dn,   SP,dn, x,dn, '*',dn, 0));
-            // // wmu-se
-            // CHECK((F5, dn,  SP,dn, x,dn, '*',dn, '*',dn, 0));
-            // CHECK((SP, up,  SP,dn, x,dn, '*',dn, '*',dn, j,dn, SP,up, 0));
+// training mode
+// options.trainingMode = true;
+// options.beepForMistakes = false;
+// CHECK((x, dn,   x,dn, 0));
+// CHECK((x, up,   x,dn, x,up, 0));
+// CHECK((LE, edn, x,dn, x,up, 0));
+// CHECK((LE, up,  x,dn, x,up, 0));
+// with modifier mapping
+// CHECK((c, dn,    c,dn, 0));
+// CHECK((c, up,    c,dn, c,up, 0));
+// CHECK((ctrl, dn, c,dn, c,up, ctrl,dn, 0));
+// CHECK((c, dn,    c,dn, c,up, ctrl,dn, 0));
+// CHECK((c, up,    c,dn, c,up, ctrl,dn, 0));
+// CHECK((ctrl, up, c,dn, c,up, ctrl,dn, ctrl,up, 0));
 
-            // // Overlapping mapped keys
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((m, dn,   0));
-            // CHECK((j, dn,   DEL,edn, LE,edn, 0));
-            // CHECK((j, up,   DEL,edn, LE,edn, LE,up, 0));
-            // CHECK((m, up,   DEL,edn, LE,edn, LE,up, DEL,up, 0));
-            // CHECK((SP, up,  DEL,edn, LE,edn, LE,up, DEL,up, 0));
-
-            // // Overlapping mapped keys -- space up first.
-            // // should release held mapped keys.  (Fixes sticky Shift bug.)
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((m, dn,   0));
-            // CHECK((j, dn,   DEL,edn, LE,edn, 0));
-            // // release order is in vk code order
-            // CHECK((SP, up,  DEL,edn, LE,edn, LE,up, DEL,up, 0));
-
-            // // mapped modifier keys
-            // options.keyMapping['C'] = ctrlFlag | 'C'; // ctrl+c
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((c, dn,   0));
-            // CHECK((c, up,   ctrl,dn, c,dn, ctrl,up, c,up, 0));
-            // CHECK((c, dn,   ctrl,dn, c,dn, ctrl,up, c,up, ctrl,dn, c,dn, ctrl,up, 0));
-            // CHECK((c, up,   ctrl,dn, c,dn, ctrl,up, c,up, ctrl,dn, c,dn, ctrl,up, c,up, 0));
-            // CHECK((SP, up,  ctrl,dn, c,dn, ctrl,up, c,up, ctrl,dn, c,dn, ctrl,up, c,up, 0));
-            // // with modifier already down:
-            // resetOutput();
-            // CHECK((SP, dn,  0));
-            // CHECK((ctrl,dn, ctrl,dn, 0));
-            // CHECK((c, dn,   ctrl,dn, 0));
-            // CHECK((c, up,   ctrl,dn, c,dn, c,up, 0));
-            // CHECK((ctrl,up, ctrl,dn, c,dn, c,up, ctrl,up, 0));
-            // CHECK((SP,up,   ctrl,dn, c,dn, c,up, ctrl,up, 0));
-
-            // // training mode
-            // options.trainingMode = true;
-            // options.beepForMistakes = false;
-            // resetOutput();
-            // CHECK((x, dn,   x,dn, 0));
-            // CHECK((x, up,   x,dn, x,up, 0));
-            // CHECK((LE, edn, x,dn, x,up, 0));
-            // CHECK((LE, up,  x,dn, x,up, 0));
-            // // with modifier mapping
-            // resetOutput();
-            // CHECK((c, dn,    c,dn, 0));
-            // CHECK((c, up,    c,dn, c,up, 0));
-            // CHECK((ctrl, dn, c,dn, c,up, ctrl,dn, 0));
-            // CHECK((c, dn,    c,dn, c,up, ctrl,dn, 0));
-            // CHECK((c, up,    c,dn, c,up, ctrl,dn, 0));
-            // CHECK((ctrl, up, c,dn, c,up, ctrl,dn, ctrl,up, 0));
-
-            // SM.printUnusedTransitions();
-            // if (failures) exit(failures);
-            // else OutputDebugString(L"Unit tests passed\n");
-
-            // options = oldOptions;
-            // isInUnitTest = false;
-        // }
-    // };
-
-    // Tester tester;
-// }
+// SM.printUnusedTransitions();
