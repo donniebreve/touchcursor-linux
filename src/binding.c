@@ -15,9 +15,15 @@
 
 #include "binding.h"
 
+// The input device
 int input;
+
+// The output device
 int output;
 
+/**
+ * Binds to the input device using ioctl.
+ */
 int bindInput(char* fileDescriptor)
 {
     // Open the keyboard device
@@ -57,6 +63,9 @@ int bindInput(char* fileDescriptor)
     return EXIT_SUCCESS;
 }
 
+/**
+ * Creates and binds a virtual output device using ioctl and uinput.
+ */
 int bindOutput()
 {
     // Define the virtual keyboard

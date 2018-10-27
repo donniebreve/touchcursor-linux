@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <linux/input.h>
 
-#include "binding.h" // device output must be defined
+#include "binding.h"
 #include "emit.h"
 
 /**

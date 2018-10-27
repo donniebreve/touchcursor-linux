@@ -3,20 +3,31 @@
  * Replicates the touch cursor style movement under linux (works under wayland)
  *
  * Special thanks to Thomas Bocek for the starting point for this application.
- * Special thanks to Martin Stone for Touch Cursor project.
+ * Special thanks to Martin Stone for the inspiration and Touch Cursor source.
  *
  * Running
- * make sure the file has the sudo execution permission
- * pass the /dev/input/by-path/id path of your keyboard
- *
+ * make sure the file has the sudo execution permission, or run as sudo
+ * pass the /dev/input/event# path of your keyboard
  */
 
 #include <stdio.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
 
-#include "emit.h" // function emit must be defined
+#include "emit.h"
 #include "queue.h"
+
+// The state machine states
+static enum states
+{
+    idle,
+    hyper,
+    delay,
+    map
+} state;
+
+// Flag if the hyper key has been emitted
+static int hyperEmitted;
 
 /**
  * Converts input key to touch cursor key
@@ -49,7 +60,9 @@ static int isHyper(int code)
 }
 
 /**
- * Checks if the event is a key down.
+ * Checks if the event is key down.
+ * Linux input sends value=2 for repeated key down.
+ * We treat them as keydown events for processing.
  */
 static int isDown(int value)
 {
@@ -114,16 +127,9 @@ int isModifier(int code)
     }
 }
 
-static enum states
-{
-    idle,
-    hyper,
-    delay,
-    map
-} state;
-
-int hyperEmitted;
-
+/**
+ * Processes a key input event. Converts and emits events as necessary.
+ */
 void processKey(int type, int code, int value)
 {
     switch (state)
@@ -269,5 +275,4 @@ void processKey(int type, int code, int value)
             }
             break;
     }
-    printf("state %i\n", state);
 }
