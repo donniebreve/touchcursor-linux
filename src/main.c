@@ -1,6 +1,11 @@
 // build
 // gcc -Wall binding.c emit.c queue.c touchcursor.c main.c  -o ../output/touchcursor
 
+// run
+// your useraccount must be in the input group (or equivalent). check ls -l /dev/input/.
+// sudo usermod -a -G input user
+// ./touchcursor /dev/input/event#
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,13 +25,6 @@
 */
 int main(int argc, char* argv[])
 {
-    // Set the user id
-    if (setuid(0) < 0)
-    {
-        fprintf(stderr, "error: setuid(0) failed: %s.\n", strerror(errno));
-        return EXIT_FAILURE;
-    }
-
     // Check the argument count
     if(argc < 2)
     {
