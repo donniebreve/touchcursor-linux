@@ -22,12 +22,16 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "queue.h"
+
+initq();
+
 // The output device
 int output;
 
 /**
-* Emits a key event
-*/
+ * Emits a key event
+ */
 int emit(int fileDescriptor, int type, int code, int value)
 {
    struct input_event ie;
@@ -63,8 +67,7 @@ int convertInput(int key)
 }
 
 /**
- * Converts input key to touch cursor key
- * To do: make this configurable
+ * Checks if the key is mapped.
  */
 int isMapped(int key)
 {
@@ -87,8 +90,8 @@ int isMapped(int key)
 }
 
 /**
-* Checks if the key is a modifier key.
-*/
+ * Checks if the key is a modifier key.
+ */
 int isModifier(int key)
 {
     switch (key)
@@ -121,6 +124,15 @@ int isModifier(int key)
     }
 }
 
+enum states
+{
+    idle,
+    delay,
+    waiting,
+    mapping
+};
+enum states state;
+
 int hyper = 0; // if the hyper key is pressed or not
 int hyperEmitted = 0; // if the hyper key down has been emitted
 int mappedKeyPressed = 0; // if a mapped key was pressed
@@ -133,6 +145,53 @@ struct input_event capturedEvent; // the mapped key down captured event
  */
 int processKey(struct input_event inputEvent)
 {
+    switch (state)
+    {
+        case idle:
+            if (inputEvent.code == 57)
+            {
+                if (inputEvent.value == 2)
+                {
+                    return 1;
+                }
+                if (inputEvent.value == 1)
+                {
+                    hyper = 1;
+                    return 1;
+                }
+                if (inputEvent.value == 0)
+                {
+                    emit(output, EV_KEY, KEY_SPACE, 1);
+                }
+            }
+            if (hyper == 1)
+            {
+                if (inputEvent.value == 1 || inputEvent.value == 2)
+                {
+                    if (isMapped(inputEvent.code))
+                    {
+                        enqueue(inputEvent.code);
+                        state = delay;
+                        return 1;
+                    }
+                }
+            }
+            break;
+        case delay:
+            if (inputEvent.value == 1 || inputEvent.value == 2)
+            {
+                if (isMapped(inputEvent.code))
+                {
+                    enqueue(inputEvent.code);
+                    return 1;
+                }
+            }
+            break;
+    }
+
+
+
+
     if (inputEvent.code == 57)
     {
         if (inputEvent.value == 2)
@@ -150,13 +209,14 @@ int processKey(struct input_event inputEvent)
         }
         if (inputEvent.value == 0)
         {
-            if (!hyperEmitted && !mappedKeyPressed)
+            if (!mappedKeyPressed && !hyperEmitted)
             {
                 emit(output, EV_KEY, KEY_SPACE, 1);
                 emit(output, EV_SYN, 0, 0);
             }
             if (captured && !captureEmitted)
             {
+                emit(output, EV_KEY, KEY_SPACE, 1);
                 emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
                 emit(output, EV_SYN, 0, 0);
             }
@@ -172,7 +232,7 @@ int processKey(struct input_event inputEvent)
                 mappedKeyPressed = 1;
                 if (!captured)
                 {
-                    inputEvent.code = convertInput(inputEvent.code);
+                    printf("captured 1\n");
                     capturedEvent = inputEvent;
                     captured = 1;
                     return 1;
@@ -181,7 +241,7 @@ int processKey(struct input_event inputEvent)
                 {
                     if (!captureEmitted)
                     {
-                        emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
+                        emit(output, EV_KEY, convertInput(capturedEvent.code), capturedEvent.value);
                         emit(output, EV_SYN, 0, 0);
                         captureEmitted = 1;
                     }
@@ -205,10 +265,18 @@ int processKey(struct input_event inputEvent)
             {
                 if (captured && !captureEmitted)
                 {
-                    emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
+                    emit(output, EV_KEY, convertInput(capturedEvent.code), capturedEvent.value);
                     emit(output, EV_SYN, 0, 0);
                     captureEmitted = 1;
                 }
+                else
+                {
+                    printf("captured 2\n");
+                    capturedEvent = inputEvent;
+                    captured = 1;
+                    return 1;
+                }
+                mappedKeyPressed = 1;
                 emit(output, EV_KEY, convertInput(inputEvent.code), inputEvent.value);
                 return 1;
             }
@@ -222,7 +290,7 @@ int processKey(struct input_event inputEvent)
                 }
                 if (captured && !captureEmitted)
                 {
-                    emit(output, EV_KEY, capturedEvent.code, capturedEvent.value);
+                    emit(output, EV_KEY, convertInput(capturedEvent.code), capturedEvent.value);
                     emit(output, EV_SYN, 0, 0);
                     captureEmitted = 1;
                 }
