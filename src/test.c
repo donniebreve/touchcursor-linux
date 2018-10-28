@@ -1,5 +1,5 @@
 // build
-// gcc -Wall queue.c touchcursor.c test.c  -o ../output/test
+// gcc -Wall queue.c touchcursor.c test.c  -o ../out/test
 
 #include <stdio.h>
 #include <stdarg.h>

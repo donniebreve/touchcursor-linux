@@ -1,11 +1,3 @@
-// build
-// gcc -Wall binding.c emit.c queue.c touchcursor.c main.c  -o ../output/touchcursor
-
-// run
-// your useraccount must be in the input group (or equivalent). check ls -l /dev/input/.
-// sudo usermod -a -G input user
-// ./touchcursor /dev/input/event#
-
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,10 +7,37 @@
 #include <errno.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
+#include <dirent.h>
+
+#include <pwd.h>
+#include <grp.h>
 
 #include "binding.h"
 #include "emit.h"
 #include "touchcursor.h"
+
+/**
+ * Helper method to print existing keyboard devices.
+ */
+void printKeyboardDevices()
+{
+    DIR* directoryStream = opendir("/dev/input/by-id/"); 
+    if (!directoryStream)
+    {
+        printf("error: could not open /dev/input/by-id/\n"); 
+        return; //EXIT_FAILURE;
+    }
+    fprintf(stderr, "\nUse any of the following for an argument to this application:\n");
+    struct dirent* directory = NULL;
+    while ((directory = readdir(directoryStream)))
+    {
+        if (strstr(directory->d_name, "kbd"))
+        {
+            printf ("/dev/input/by-id/%s\n", directory->d_name);
+        }
+    }
+    fprintf(stderr, "\nExample: touchcursor /dev/input/by-id/some-device-name\n");
+}
 
 /**
 * Main method.
@@ -29,6 +48,7 @@ int main(int argc, char* argv[])
     if(argc < 2)
     {
         fprintf(stderr, "error: please specify the input device found in /dev/input/by-id/\n");
+        printKeyboardDevices();
         return EXIT_FAILURE;
     }
 
