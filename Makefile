@@ -27,9 +27,6 @@ $(OBJPATH)/%.o: $(SRCPATH)/%.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # The target depends on all the .o files
-# Build the executable
-# Change the executable group
-# Add the gid sticky bit
 $(OUTPATH)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(OUTPATH)
 	$(CC) $(OBJECTS) -Wall -o $@
