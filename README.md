@@ -1,6 +1,6 @@
 # Thanks to
-[Thomas Bocek](https://github.com/tbocek) check him out and thanks for the starting point.  
-[Martin Stone, Touch Cursor](https://github.com/martin-stone/touchcursor) wonderful project for cursor movement when coding.
+[Thomas Bocek](https://github.com/tbocek): check him out and thanks for the starting point.  
+[Martin Stone, Touch Cursor](https://github.com/martin-stone/touchcursor): wonderful project for cursor movement when coding.
 
 # What this application does
 This application remaps the uiophjklnm keys to different movement keys when the spacebar is pressed down, allowing you to keep your hands on the home row.
