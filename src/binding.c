@@ -30,7 +30,7 @@ int bindInput(char* fileDescriptor)
     input = open(fileDescriptor, O_RDONLY);
     if (input < 0)
     {
-        fprintf(stderr, "error: cannot open the input device: %s.\n", strerror(errno));
+        fprintf(stderr, "error: cannot open the input device, is this file set to the 'input' group (or equivalent)?: %s.\n", strerror(errno));
         return EXIT_FAILURE;
     }
     // Retrieve the device name
