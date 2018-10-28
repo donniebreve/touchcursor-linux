@@ -21,7 +21,7 @@ OBJECTS = $(patsubst $(SRCPATH)/%.c, $(OBJPATH)/%.o, $(SOURCES))
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
-# Each .o file depends on its .c file and its .h file (we include all headers)
+# Each .o file depends on its .c file and .h file (we include all headers)
 $(OBJPATH)/%.o: $(SRCPATH)/%.c $(HEADERS)
 	@mkdir -p $(OBJPATH)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -42,10 +42,10 @@ install:
 	@echo ""
 	@echo "# Changing the group on the application to the same group as the devices in /dev/input/."
 	@echo "# This allows the application to read from the input without needing sudo."
-	@echo "# The chrgp command requires sudo."
+	@echo "# This action requires sudo."
 	sudo chgrp --reference=$$(find /dev/input/by-id/ | grep kbd | head -n 1) $(INSTALLPATH)/$(TARGET)
 	@echo ""
 	@echo "# Setting the groupid sticky bit on the application."
 	@echo "# This allows the application to run as the group we just assigned."
-	@echo "# The chmod command requires sudo."
+	@echo "# This action requires sudo."
 	sudo chmod g+s $(INSTALLPATH)/$(TARGET)
