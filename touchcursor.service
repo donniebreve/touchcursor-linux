@@ -1,0 +1,10 @@
+[Unit]
+Description=Touch Cursor Service
+
+[Service]
+ExecStart=/usr/local/bin/touchcursor
+User=
+Group=
+
+[Install]
+WantedBy=multi-user.target

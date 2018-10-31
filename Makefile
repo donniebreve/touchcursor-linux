@@ -49,3 +49,15 @@ install:
 	@echo "# This allows the application to run as the group we just assigned."
 	@echo "# This action requires sudo."
 	sudo chmod g+s $(INSTALLPATH)/$(TARGET)
+	@echo ""
+	@echo "# Copying default configuration file to ~/.config/touchcursor/touchcursor.config"
+	mkdir -p ~/.config/touchcursor/
+	cp touchcursor.config ~/.config/touchcursor/touchcursor.config
+	@echo ""
+	@echo "# Copying service file to /etc/systemd/system/"
+	@echo "# This action requires sudo."
+	sudo cp touchcursor.service /etc/systemd/system/
+	@echo ""
+	@echo "# Starting the service"
+	@echo "# This action requires sudo."
+	#systemctl start touchcursor.service
