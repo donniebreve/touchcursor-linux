@@ -27,6 +27,7 @@ int output;
 int bindInput(char* fileDescriptor)
 {
     // Open the keyboard device
+    fprintf(stdout, "Attempting to attach to: '%s'\n", fileDescriptor);
     input = open(fileDescriptor, O_RDONLY);
     if (input < 0)
     {

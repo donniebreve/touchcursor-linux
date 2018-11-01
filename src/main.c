@@ -12,6 +12,7 @@
 #include <pwd.h>
 #include <grp.h>
 
+#include "config.h"
 #include "binding.h"
 #include "emit.h"
 #include "touchcursor.h"
@@ -27,16 +28,15 @@ void printKeyboardDevices()
         printf("error: could not open /dev/input/by-id/\n"); 
         return; //EXIT_FAILURE;
     }
-    fprintf(stderr, "\nUse any of the following for an argument to this application:\n");
+    fprintf(stderr, "suggestion: use any of the following in the configuration file for this application:\n");
     struct dirent* directory = NULL;
     while ((directory = readdir(directoryStream)))
     {
         if (strstr(directory->d_name, "kbd"))
         {
-            printf ("/dev/input/by-id/%s\n", directory->d_name);
+            printf ("keyboard=/dev/input/by-id/%s\n", directory->d_name);
         }
     }
-    fprintf(stderr, "\nExample: touchcursor /dev/input/by-id/some-device-name\n");
 }
 
 /**
@@ -44,16 +44,16 @@ void printKeyboardDevices()
 */
 int main(int argc, char* argv[])
 {
-    // Check the argument count
-    if(argc < 2)
+    readConfiguration();
+    if (!keyboardDevice)
     {
-        fprintf(stderr, "error: please specify the input device found in /dev/input/by-id/\n");
+        fprintf(stderr, "error: please specify the keyboard device found in /dev/input/by-id/ in the configuration file\n");
         printKeyboardDevices();
         return EXIT_FAILURE;
     }
 
     // Bind the input device
-    bindInput(argv[1]);
+    bindInput(keyboardDevice);
 
     // Bind the output device
     bindOutput();
