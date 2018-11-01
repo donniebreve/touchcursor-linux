@@ -66,7 +66,11 @@ void readConfiguration()
         char* token = strsep(&line, "=");
         if (strcmp(token, "keyboard") == 0)
         {
-            keyboardDevice = strsep(&line, "=");
+            token = strsep(&line, "=");
+            if (token != NULL && strcmp(token, "") != 0)
+            {
+                keyboardDevice = trimString(token);
+            }
         }
     }
 
