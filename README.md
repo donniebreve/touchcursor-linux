@@ -18,5 +18,10 @@ n - page down
 m - del
 ```
 
+# How to install
+1. Clone or download this repo
+2. 'make' to build the application
+3. 'make install' to install the application
+
 # Special note
-This application works under Xorg and **Wayland** :)
+This application works under Xorg and **Wayland**
