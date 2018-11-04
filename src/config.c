@@ -39,20 +39,11 @@ int isCommentHeaderOrEmpty(char* line)
  */
 void readConfiguration()
 {
-    char* homePath;
-    if (!(homePath = getenv("HOME")))
-    {
-        homePath = getpwuid(getuid())->pw_dir;
-    }
-
-    char configFilePath[256];
-    configFilePath[0] = '\0';
-    strcat(configFilePath, homePath);
-    strcat(configFilePath, "/.config/touchcursor/touchcursor.config");
+    char* configFilePath = "/etc/touchcursor/touchcursor.conf";
     FILE* configFile = fopen(configFilePath, "r");
     if (!configFile)
     {
-        fprintf(stderr, "error: could not open the configuration file at: ~/.config/touchcursor/touchcursor.config\n");
+        fprintf(stderr, "error: could not open the configuration file at: %s\n", configFilePath);
         return;
     }
 

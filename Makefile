@@ -36,21 +36,21 @@ clean:
 	-rm -f $(OUTPATH)/$(TARGET)
 
 install:
-	@echo "# Copying default configuration file to ~/.config/touchcursor/touchcursor.config"
-	mkdir -p ~/.config/touchcursor/
-	cp -n touchcursor.config ~/.config/touchcursor/touchcursor.config
-	@echo ""
 	@echo "# Copying application to /usr/bin/"
 	@echo "# This action requires sudo."
 	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
 	@echo ""
+	@echo "# Copying default configuration file to /etc/touchcursor/touchcursor.conf"
+	@echo "# This action requires sudo."
+	sudo mkdir -p /etc/touchcursor/
+	sudo cp -n touchcursor.conf /etc/touchcursor/
+	@echo ""
 	@echo "# Copying service file to /etc/systemd/system/"
 	@echo "# This action requires sudo."
-	sudo cp touchcursor@.service /etc/systemd/system/
-	sudo sed -i s/Group=/Group=$$(ls -al /dev/input | grep '^c' |  head -n 1 | awk '{print $$4}')/ /etc/systemd/system/touchcursor@.service
+	sudo cp touchcursor.service /etc/systemd/system/
 	@echo ""
 	@echo "# Enabling and starting the service"
 	@echo "# This action requires sudo."
 	sudo systemctl daemon-reload
-	sudo systemctl enable touchcursor@$(USER).service
-	sudo systemctl start touchcursor@$(USER).service
+	sudo systemctl enable touchcursor.service
+	sudo systemctl start touchcursor.service
