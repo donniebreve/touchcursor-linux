@@ -16,6 +16,7 @@ p - backspace
 h - page up
 n - page down
 m - del
+y - insert
 ```
 
 # How to install
