@@ -47,6 +47,7 @@ static int convert(int code)
         case KEY_H: return KEY_PAGEUP;
         case KEY_N: return KEY_PAGEDOWN;
         case KEY_M: return KEY_DELETE;
+        case KEY_Y: return KEY_INSERT;
         default: return code;
     }
 }
@@ -86,6 +87,7 @@ int isMapped(int code)
         case KEY_H:
         case KEY_N:
         case KEY_M:
+        case KEY_Y:
             return 1;
         default:
             return 0;
