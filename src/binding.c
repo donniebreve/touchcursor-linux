@@ -24,16 +24,18 @@ int output;
 /**
  * Binds to the input device using ioctl.
  */
-int bindInput(char* fileDescriptor)
+int bindInput(char* eventPath)
 {
     // Open the keyboard device
-    fprintf(stdout, "Attempting to attach to: '%s'\n", fileDescriptor);
-    input = open(fileDescriptor, O_RDONLY);
+    fprintf(stdout, "Attempting to attach to: '%s'\n", eventPath);
+
+    input = open(eventPath, O_RDONLY);
     if (input < 0)
     {
         fprintf(stderr, "error: cannot open the input device, is this file set to the 'input' group (or equivalent)?: %s.\n", strerror(errno));
         return EXIT_FAILURE;
     }
+
     // Retrieve the device name
     char keyboardName[256] = "Unknown";
     if (ioctl(input, EVIOCGNAME(sizeof(keyboardName) - 1), keyboardName) < 0)

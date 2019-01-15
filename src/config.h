@@ -1,7 +1,7 @@
 #ifndef config_header
 #define config_header
 
-extern char* keyboardDevice;
+extern char eventPath[18];
 
 void readConfiguration();
 
