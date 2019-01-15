@@ -18,42 +18,21 @@
 #include "touchcursor.h"
 
 /**
- * Helper method to print existing keyboard devices.
- */
-void printKeyboardDevices()
-{
-    DIR* directoryStream = opendir("/dev/input/by-id/"); 
-    if (!directoryStream)
-    {
-        printf("error: could not open /dev/input/by-id/\n"); 
-        return; //EXIT_FAILURE;
-    }
-    fprintf(stderr, "suggestion: use any of the following in the configuration file for this application:\n");
-    struct dirent* directory = NULL;
-    while ((directory = readdir(directoryStream)))
-    {
-        if (strstr(directory->d_name, "kbd"))
-        {
-            printf ("keyboard=/dev/input/by-id/%s\n", directory->d_name);
-        }
-    }
-}
-
-/**
 * Main method.
 */
 int main(int argc, char* argv[])
 {
     readConfiguration();
-    if (!keyboardDevice)
+    if (eventPath[0] == 0)
     {
-        fprintf(stderr, "error: please specify the keyboard device found in /dev/input/by-id/ in the configuration file\n");
-        printKeyboardDevices();
+        fprintf(stderr, "error: please specify the keyboard device name in the configuration file\n");
         return EXIT_FAILURE;
     }
 
+    printf("keyboard event: '%s'\n", eventPath);
+
     // Bind the input device
-    bindInput(keyboardDevice);
+    bindInput(eventPath);
 
     // Bind the output device
     bindOutput();
