@@ -23,5 +23,14 @@ m - del
 2. 'make' to build the application
 3. 'make install' to install the application
 
+# Bluetooth keyboards
+Bluetooth keyboards do not show up in /dev/input/by-id/ to be easily identified.
+
+1. type 'less /proc/bus/input/devices'
+2. Find your bluetooth keyboard by looking at the Name or looking for 'bluetooth' in Sysfs
+3. Once you have identified your keyboard, take note of the event in the Handlers variable (e.g. 'event21')
+4. Add your keyboard to the touchcursor configuration under /etc/touchcursor/touchcursor.conf
+    1. keyboard=/dev/input/event21
+
 # Special note
 This application works under Xorg and **Wayland**
