@@ -1,8 +1,4 @@
-# Thanks to
-[Thomas Bocek](https://github.com/tbocek): check him out and thanks for the starting point.  
-[Martin Stone, Touch Cursor](https://github.com/martin-stone/touchcursor): wonderful project for cursor movement when coding.
-
-# What this application does
+# touchcursor-linux
 This application remaps the uiophjklnm keys to different movement keys when the spacebar is pressed down, allowing you to keep your hands on the home row.
 
 ```
@@ -32,6 +28,10 @@ Bluetooth keyboards do not show up in /dev/input/by-id/ to be easily identified.
 3. Once you have identified your keyboard, take note of the event in the Handlers variable (e.g. 'event21')
 4. Add your keyboard to the touchcursor configuration under /etc/touchcursor/touchcursor.conf
     1. keyboard=/dev/input/event21
+
+# Thanks to
+[Thomas Bocek](https://github.com/tbocek): check him out and thanks for the starting point.  
+[Martin Stone, Touch Cursor](https://github.com/martin-stone/touchcursor): wonderful project for cursor movement when coding.
 
 # Special note
 This application works under Xorg and **Wayland**
