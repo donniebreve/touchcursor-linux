@@ -19,6 +19,7 @@ y - insert
 1. Clone or download this repo
 2. 'make' to build the application
 3. 'make install' to install the application
+4. Update the config at /etc/touchcursor/touchcursor.conf
 
 # Thanks to
 [Thomas Bocek](https://github.com/tbocek): check him out and thanks for the starting point.  
