@@ -8,7 +8,11 @@
 #include <pwd.h>
 #include <dirent.h>
 
+#include "config.h"
+#include "keys.h"
+
 char eventPath[18];
+int keymap[256];
 
 /**
  * Trims a string.
@@ -128,7 +132,7 @@ void readConfiguration()
         char* line = trimString(buffer);
 
          // Comment or empty line
-        if (isCommentHeaderOrEmpty(line)) continue;
+        if (isCommentOrEmpty(line)) continue;
 
         // Check for section
         if (strncmp(line, "[Device]", strlen(line)) == 0)
