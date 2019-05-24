@@ -30,29 +30,6 @@ static enum states
 static int hyperEmitted;
 
 /**
- * Converts input key to touch cursor key
- * To do: make this configurable
- */
-static int convert(int code)
-{
-    switch (code)
-    {
-        case KEY_I: return KEY_UP;
-        case KEY_J: return KEY_LEFT;
-        case KEY_K: return KEY_DOWN;
-        case KEY_L: return KEY_RIGHT;
-        case KEY_U: return KEY_HOME;
-        case KEY_O: return KEY_END;
-        case KEY_P: return KEY_BACKSPACE;
-        case KEY_H: return KEY_PAGEUP;
-        case KEY_N: return KEY_PAGEDOWN;
-        case KEY_M: return KEY_DELETE;
-        case KEY_Y: return KEY_INSERT;
-        default: return code;
-    }
-}
-
-/**
  * Checks if the key is the hyper key.
  */
 static int isHyper(int code)
@@ -73,60 +50,18 @@ static int isDown(int value)
 /**
  * Checks if the key has been mapped.
  */
-int isMapped(int code)
+static int isMapped(int code)
 {
-    switch (code)
-    {
-        case KEY_I:
-        case KEY_J:
-        case KEY_K:
-        case KEY_L:
-        case KEY_U:
-        case KEY_O:
-        case KEY_P:
-        case KEY_H:
-        case KEY_N:
-        case KEY_M:
-        case KEY_Y:
-            return 1;
-        default:
-            return 0;
-    }
+    return keymap[code] != 0;
 }
 
 /**
-* Checks if the key is a modifier key.
-*/
-int isModifier(int code)
+ * Converts input key to touch cursor key
+ * To do: make this configurable
+ */
+static int convert(int code)
 {
-    switch (code)
-    {
-        case KEY_ESC:
-        case KEY_BACKSPACE:
-        case KEY_TAB:
-        case KEY_ENTER:
-        case KEY_LEFTCTRL:
-        case KEY_GRAVE:
-        case KEY_LEFTSHIFT:
-        case KEY_RIGHTSHIFT:
-        case KEY_LEFTALT:
-        case KEY_CAPSLOCK:
-        case KEY_F1:
-        case KEY_F2:
-        case KEY_F3:
-        case KEY_F4:
-        case KEY_F5:
-        case KEY_F6:
-        case KEY_F7:
-        case KEY_F8:
-        case KEY_F9:
-        case KEY_F10:
-        case KEY_NUMLOCK:
-        case KEY_SCROLLLOCK:
-            return 1;
-        default:
-            return 0;
-    }
+    return keymap[code];
 }
 
 /**
