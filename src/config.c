@@ -36,11 +36,11 @@ int startsWith(const char* str, const char* value)
 }
 
 /**
- * Checks for header or commented lines.
+ * Checks for commented or empty lines.
  */
-int isCommentHeaderOrEmpty(char* line)
+int isCommentOrEmpty(char* line)
 {
-    return line[0] == '[' || line [0] == '#' || line[0] == '\0';
+    return line [0] == '#' || line[0] == '\0';
 }
 
 /**
@@ -100,6 +100,13 @@ void findDeviceEvent(char* deviceName)
     if (line) free(line);
 }
 
+static enum sections
+{
+    none,
+    device,
+    bindings
+} section;
+
 /**
  * Reads the configuration file.
  */
@@ -113,43 +120,75 @@ void readConfiguration()
         return;
     }
 
-    char* line = NULL;
+    char* buffer = NULL;
     size_t length = 0;
-    ssize_t result;
-    while ((result = getline(&line, &length, configFile)) != -1)
+    ssize_t result = -1;
+    while ((result = getline(&buffer, &length, configFile)) != -1)
     {
+        char* line = trimString(buffer);
+
+         // Comment or empty line
         if (isCommentHeaderOrEmpty(line)) continue;
-        // Look for the device name
-        if (startsWith(line, "Name="))
+
+        // Check for section
+        if (strncmp(line, "[Device]", strlen(line)) == 0)
         {
-            printf("found device name in config\n");
-            findDeviceEvent(trimString(line));
+            section = device;
+            continue;
+        }
+        if (strncmp(line, "[Bindings]", strlen(line)) == 0)
+        {
+            section = bindings;
+            continue;
+        }
+
+        // Read configurations
+        switch (section)
+        {
+            case device:
+                findDeviceEvent(line);
+                continue;
+
+            case bindings:
+            {
+                char* tokens = line;
+                char* token = strsep(&tokens, "=");
+                int fromCode = convertKeyStringToCode(token);
+                token = strsep(&tokens, "=");
+                int toCode = convertKeyStringToCode(token);
+                keymap[fromCode] = toCode;
+                break;
+            }
+
+            case none:
+            default:
+                continue;
         }
     }
-
     fclose(configFile);
-    if (line) free(line);
+    if (buffer) free(buffer);
 }
 
 /**
  * Helper method to print existing keyboard devices.
  * Does not work for bluetooth keyboards.
  */
-void printKeyboardDevices()
-{
-    DIR* directoryStream = opendir("/dev/input/");
-    if (!directoryStream)
-    {
-        printf("error: could not open /dev/input/\n");
-        return; //EXIT_FAILURE;
-    }
-    fprintf(stderr, "suggestion: use any of the following in the configuration file for this application:\n");
-    struct dirent* directory = NULL;
-    while ((directory = readdir(directoryStream)))
-    {
-        if (strstr(directory->d_name, "kbd"))
-        {
-            printf ("keyboard=/dev/input/by-id/%s\n", directory->d_name);
-        }
-    }
-}
+// Need to revisit this
+// void printKeyboardDevices()
+// {
+//     DIR* directoryStream = opendir("/dev/input/");
+//     if (!directoryStream)
+//     {
+//         printf("error: could not open /dev/input/\n");
+//         return; //EXIT_FAILURE;
+//     }
+//     fprintf(stderr, "suggestion: use any of the following in the configuration file for this application:\n");
+//     struct dirent* directory = NULL;
+//     while ((directory = readdir(directoryStream)))
+//     {
+//         if (strstr(directory->d_name, "kbd"))
+//         {
+//             printf ("keyboard=/dev/input/by-id/%s\n", directory->d_name);
+//         }
+//     }
+// }
