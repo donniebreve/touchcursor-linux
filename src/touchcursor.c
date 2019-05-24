@@ -14,6 +14,7 @@
 #include <linux/input.h>
 #include <linux/uinput.h>
 
+#include "config.h"
 #include "emit.h"
 #include "queue.h"
 

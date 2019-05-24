@@ -1,7 +1,7 @@
-#include <linux/input.h>
+#include <string.h>
 #include <linux/uinput.h>
 
-#include <keys.h>
+#include "keys.h"
 
 /**
  * Checks if the key is a modifier key.
@@ -49,7 +49,7 @@ int convertKeyStringToCode(char* keyString)
     else if (strcmp(keyString, "KEY_RIGHT") == 0) return KEY_RIGHT;
     else if (strcmp(keyString, "KEY_DOWN") == 0) return KEY_DOWN;
     else if (strcmp(keyString, "KEY_SPACE") == 0) return KEY_SPACE;
-    else if (strcmp(keyString, "KEY_SNAPSHOT") == 0) return KEY_SNAPSHOT;
+    else if (strcmp(keyString, "KEY_PRINT") == 0) return KEY_PRINT;
     else if (strcmp(keyString, "KEY_INSERT") == 0) return KEY_INSERT;
     else if (strcmp(keyString, "KEY_DELETE") == 0) return KEY_DELETE;
     // Numbers
@@ -91,10 +91,8 @@ int convertKeyStringToCode(char* keyString)
     else if (strcmp(keyString, "KEY_Y") == 0) return KEY_Y;
     else if (strcmp(keyString, "KEY_Z") == 0) return KEY_Z;
     // More special keys
-    else if (strcmp(keyString, "KEY_LWIN") == 0) return KEY_LWIN;
-    else if (strcmp(keyString, "KEY_RWIN") == 0) return KEY_RWIN;
-    else if (strcmp(keyString, "KEY_APPS") == 0) return KEY_APPS;
-    else if (strcmp(keyString, "KEY_DIVIDE") == 0) return KEY_DIVIDE;
+    else if (strcmp(keyString, "KEY_LEFTMETA") == 0) return KEY_LEFTMETA;
+    else if (strcmp(keyString, "KEY_RIGHTMETA") == 0) return KEY_RIGHTMETA;
     else if (strcmp(keyString, "KEY_LEFTSHIFT") == 0) return KEY_LEFTSHIFT;
     else if (strcmp(keyString, "KEY_RIGHTSHIFT") == 0) return KEY_RIGHTSHIFT;
     else if (strcmp(keyString, "KEY_LEFTCTRL") == 0) return KEY_LEFTCTRL;
