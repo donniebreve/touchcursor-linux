@@ -35,7 +35,7 @@ static int hyperEmitted;
  */
 static int isHyper(int code)
 {
-    return code == KEY_SPACE;
+    return code == hyperKey;
 }
 
 /**
@@ -100,9 +100,9 @@ void processKey(int type, int code, int value)
                     state = idle;
                     if (!hyperEmitted)
                     {
-                        emit(EV_KEY, KEY_SPACE, 1);
+                        emit(EV_KEY, hyperKey, 1);
                     }
-                    emit(EV_KEY, KEY_SPACE, 0);
+                    emit(EV_KEY, hyperKey, 0);
                 }
             }
             else if (isMapped(code))
@@ -123,7 +123,7 @@ void processKey(int type, int code, int value)
                 {
                     if (!hyperEmitted)
                     {
-                        emit(EV_KEY, KEY_SPACE, 1);
+                        emit(EV_KEY, hyperKey, 1);
                         hyperEmitted = 1;
                     }
                     emit(EV_KEY, code, value);
@@ -143,14 +143,14 @@ void processKey(int type, int code, int value)
                     state = idle;
                     if (!hyperEmitted)
                     {
-                        emit(EV_KEY, KEY_SPACE, 1);
+                        emit(EV_KEY, hyperKey, 1);
                     }
                     int length = lengthOfQueue();
                     for (int i = 0; i < length; i++)
                     {
                         emit(EV_KEY, dequeue(), 1);
                     }
-                    emit(EV_KEY, KEY_SPACE, 0);
+                    emit(EV_KEY, hyperKey, 0);
                 }
             }
             else if (isMapped(code))

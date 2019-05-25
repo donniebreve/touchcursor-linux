@@ -12,6 +12,7 @@
 #include "keys.h"
 
 char eventPath[18];
+int hyperKey;
 int keymap[256];
 
 /**
@@ -108,6 +109,7 @@ static enum sections
 {
     none,
     device,
+    hyper,
     bindings
 } section;
 
@@ -140,6 +142,11 @@ void readConfiguration()
             section = device;
             continue;
         }
+        if (strncmp(line, "[Hyper]", strlen(line)) == 0)
+        {
+            section = hyper;
+            continue;
+        }
         if (strncmp(line, "[Bindings]", strlen(line)) == 0)
         {
             section = bindings;
@@ -152,6 +159,16 @@ void readConfiguration()
             case device:
                 findDeviceEvent(line);
                 continue;
+
+            case hyper:
+            {
+                char* tokens = line;
+                char* token = strsep(&tokens, "=");
+                token = strsep(&tokens, "=");
+                int code = convertKeyStringToCode(token);
+                hyperKey = code;
+                break;
+            }
 
             case bindings:
             {
