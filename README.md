@@ -22,7 +22,8 @@ y - insert
 4. Update the config at /etc/touchcursor/touchcursor.conf
 
 # Thanks to
-[Thomas Bocek, Dvorak](https://github.com/tbocek/dvorak): Check him out and thanks for the starting point. Good examples for capturing and modifying the keyboard input in Linux, specifically Wayland.  
+[Thomas Bocek, Dvorak](https://github.com/tbocek/dvorak): Check him out and thanks for the starting point. Good examples for capturing and modifying keyboard input in Linux, specifically Wayland.  
+  
 [Martin Stone, Touch Cursor](https://github.com/martin-stone/touchcursor): Wonderful project for cursor movement when coding.
 
 # Special note
