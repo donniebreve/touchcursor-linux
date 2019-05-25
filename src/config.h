@@ -7,6 +7,11 @@
 extern char eventPath[18];
 
 /**
+ * The hyper key;
+ */
+extern int hyperKey;
+
+/**
  * Map for keys and their conversion.
  */
 extern int keymap[256];
