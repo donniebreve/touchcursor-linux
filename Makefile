@@ -54,3 +54,23 @@ install:
 	sudo systemctl daemon-reload
 	sudo systemctl enable touchcursor.service
 	sudo systemctl start touchcursor.service
+
+uninstall:
+	@echo "# Stopping and disabling the service"
+	@echo "# This action requires sudo."
+	-sudo systemctl daemon-reload
+	-sudo systemctl stop touchcursor.service
+	-sudo systemctl disable touchcursor.service
+	@echo ""
+	@echo "# Removing service file from /etc/systemd/system/"
+	@echo "# This action requires sudo."
+	-sudo rm /etc/systemd/system/touchcursor.service
+	@echo ""
+	@echo "# Removing application from /usr/bin/"
+	@echo "# This action requires sudo."
+	-sudo rm $(INSTALLPATH)/touchcursor
+	@echo ""
+	@echo "# Removing configuration file /etc/touchcursor/touchcursor.conf"
+	@echo "# This action requires sudo."
+	-sudo rm /etc/touchcursor/touchcursor.conf
+	-sudo rm -r /etc/touchcursor
