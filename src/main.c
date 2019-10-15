@@ -57,7 +57,6 @@ int main(int argc, char* argv[])
         }
         // We only want to manipulate key presses
         if (inputEvent.type == EV_KEY
-            && !isModifier(inputEvent.code)
             && (inputEvent.value == 0 || inputEvent.value == 1 || inputEvent.value == 2))
         {
             processKey(inputEvent.type, inputEvent.code, inputEvent.value);
