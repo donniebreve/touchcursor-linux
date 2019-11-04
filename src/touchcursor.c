@@ -14,12 +14,13 @@
 #include <linux/input.h>
 #include <linux/uinput.h>
 
+#include "queue.h"
+#include "keys.h"
 #include "config.h"
 #include "emit.h"
-#include "queue.h"
 
 // The state machine states
-static enum states
+enum states
 {
     idle,
     hyper,
@@ -70,6 +71,7 @@ static int convert(int code)
  */
 void processKey(int type, int code, int value)
 {
+    // printf("processKey: code=%i value=%i state=%i\n", code, value, state);
     switch (state)
     {
         case idle: // 0
@@ -119,7 +121,7 @@ void processKey(int type, int code, int value)
             }
             else
             {
-                if (isDown(value))
+                if (!isModifier(code) && isDown(value))
                 {
                     if (!hyperEmitted)
                     {

@@ -1,10 +1,13 @@
 // build
-// gcc -Wall queue.c touchcursor.c test.c  -o ../out/test
+// gcc -Wall queue.c keys.c config.c touchcursor.c test.c  -o ../out/test
 
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <linux/input.h>
+
+#include "keys.h"
+#include "config.h"
 
 // minunit http://www.jera.com/techinfo/jtns/jtn002.html
 #define mu_assert(message, test) do { if (!(test)) return message; } while (0)
@@ -206,15 +209,54 @@ static int testFastTyping()
 }
 
 /*
+ * Tests for fast typing.
+ * These tests should have many overlapping key events.
+ */
+static int testSpecialTyping()
+{
+    // Space down, other (modifier) down, other (modifier) up, space up
+    // The key should be output, hyper mode retained
+    char* description = "sd, od, ou, su";
+    char* expected    = "42:1 42:0 ";
+    type(6, KEY_SPACE, 1, KEY_LEFTSHIFT, 1, KEY_LEFTSHIFT, 0, KEY_SPACE, 0);
+    if (strcmp(expected, output) != 0) {
+        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
+        return 1;
+    }
+    else {
+        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
+    }
+
+    return 0;
+}
+
+/*
  * Simple method for running all tests.
  */
 static int runTests()
-{
+{ 
+    // default config
+    hyperKey = KEY_SPACE;
+    keymap[KEY_I] = KEY_UP;
+    keymap[KEY_J] = KEY_LEFT;
+    keymap[KEY_K] = KEY_DOWN;
+    keymap[KEY_L] = KEY_RIGHT;
+    keymap[KEY_H] = KEY_PAGEUP;
+    keymap[KEY_N] = KEY_PAGEDOWN;
+    keymap[KEY_U] = KEY_HOME;
+    keymap[KEY_O] = KEY_END;
+    keymap[KEY_M] = KEY_DELETE;
+    keymap[KEY_P] = KEY_BACKSPACE;
+    keymap[KEY_Y] = KEY_INSERT;
+
     mu_run_test(testNormalTyping);
     printf("Normal typing tests passed.\n");
 
     mu_run_test(testFastTyping);
     printf("Fast typing tests passed.\n");
+
+    mu_run_test(testSpecialTyping);
+    printf("Special typing tests passed.\n");
 
     return 0;
 }
