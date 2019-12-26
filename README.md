@@ -28,6 +28,3 @@ y - insert
 
 # Special note
 This application works under Xorg and **Wayland**.
-
-# Donate
-[Feel free to buy me a beer!](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=M234HAXBDRRHY&currency_code=USD&source=url)
