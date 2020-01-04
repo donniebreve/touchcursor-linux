@@ -2,7 +2,10 @@
 Description=Touch Cursor Service
 
 [Service]
+StandardOutput=journal+console
 ExecStart=/usr/bin/touchcursor
+User=%i
+Group=input
 
 [Install]
 WantedBy=multi-user.target
