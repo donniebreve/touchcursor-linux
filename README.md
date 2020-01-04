@@ -19,7 +19,9 @@ y - insert
 1. Clone or download this repo
 2. 'make' to build the application
 3. 'make install' to install the application
-4. Update the config at /etc/touchcursor/touchcursor.conf
+4. copy the config file to your user directory `cp -n /etc/touchcursor/touchcursor.conf ~/.config/touchcursor/`
+5. modify the config file to your liking
+6. restart the service `sudo systemctl restart touchcursor@user.service`
 
 # Thanks to
 [Thomas Bocek, Dvorak](https://github.com/tbocek/dvorak): Check him out and thanks for the starting point. Good examples for capturing and modifying keyboard input in Linux, specifically Wayland.  
