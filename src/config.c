@@ -3,14 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <dirent.h>
 
 #include "config.h"
 #include "keys.h"
 
+char configFilePath[256];
 char eventPath[18];
 int hyperKey;
 int keymap[256];
@@ -118,13 +115,35 @@ static enum sections
  */
 void readConfiguration()
 {
-    char* configFilePath = "/etc/touchcursor/touchcursor.conf";
-    FILE* configFile = fopen(configFilePath, "r");
+    configFilePath[0] = '\0';
+    FILE* configFile;
+
+    fprintf(stdout, "info: YO\n");
+
+    char* homePath = getenv("HOME");
+    if (!homePath)
+    {
+        fprintf(stdout, "error: home path environment variable not specified\n");
+    }
+    if (homePath)
+    {
+        strcat(configFilePath, homePath);
+        strcat(configFilePath, "/.config/touchcursor/touchcursor.conf");
+        fprintf(stdout, "info: looking for the configuration file at: %s\n", configFilePath);
+        configFile = fopen(configFilePath, "r");
+    }
     if (!configFile)
     {
-        fprintf(stderr, "error: could not open the configuration file at: %s\n", configFilePath);
+        strcpy(configFilePath, "/etc/touchcursor/touchcursor.conf");
+        fprintf(stdout, "info: looking for the configuration file at: %s\n", configFilePath);
+        configFile = fopen(configFilePath, "r");
+    }
+    if (!configFile)
+    {
+        fprintf(stdout, "error: could not open the configuration file\n");
         return;
     }
+    fprintf(stdout, "info: found the configuration file\n");
 
     char* buffer = NULL;
     size_t length = 0;
@@ -133,7 +152,7 @@ void readConfiguration()
     {
         char* line = trimString(buffer);
 
-         // Comment or empty line
+        // Comment or empty line
         if (isCommentOrEmpty(line)) continue;
 
         // Check for section
@@ -186,6 +205,7 @@ void readConfiguration()
                 continue;
         }
     }
+
     fclose(configFile);
     if (buffer) free(buffer);
 }
@@ -203,7 +223,7 @@ void readConfiguration()
 //         printf("error: could not open /dev/input/\n");
 //         return; //EXIT_FAILURE;
 //     }
-//     fprintf(stderr, "suggestion: use any of the following in the configuration file for this application:\n");
+//     fprintf(stdout, "suggestion: use any of the following in the configuration file for this application:\n");
 //     struct dirent* directory = NULL;
 //     while ((directory = readdir(directoryStream)))
 //     {

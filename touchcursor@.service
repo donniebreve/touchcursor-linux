@@ -3,6 +3,8 @@ Description=Touch Cursor Service
 
 [Service]
 ExecStart=/usr/bin/touchcursor
+User=%i
+Group=input
 
 [Install]
 WantedBy=multi-user.target

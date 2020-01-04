@@ -6,6 +6,14 @@ TARGET = touchcursor
 CC = gcc
 CFLAGS = -g -Wall
 INSTALLPATH?=/usr/bin
+# Configuration variables
+SERVICEPATH = /etc/systemd/system
+SERVICEFILE = touchcursor@.service
+SERVICE := touchcursor@$(USER).service
+CONFIGPATH = /etc/touchcursor
+CONFIGFILE = touchcursor.conf
+INPUTFILE = $(shell find /dev/input/event* | head -n 1)
+INPUTGROUP = $(shell stat -c '%G' $(INPUTFILE))
 
 .PHONY: default all clean
 
@@ -36,41 +44,48 @@ clean:
 	-rm -f $(OUTPATH)/$(TARGET)
 
 install:
-	@echo "# Copying application to /usr/bin/"
+	@echo "# Copying application to $(INSTALLPATH)"
 	@echo "# This action requires sudo."
 	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
 	@echo ""
-	@echo "# Copying default configuration file to /etc/touchcursor/touchcursor.conf"
+
+	@echo "# Copying default configuration file to $(CONFIGPATH)/$(CONFIGFILE)"
 	@echo "# This action requires sudo."
-	sudo mkdir -p /etc/touchcursor/
-	sudo cp -n touchcursor.conf /etc/touchcursor/
+	sudo mkdir -p $(CONFIGPATH)
+	sudo cp -n $(CONFIGFILE) $(CONFIGPATH)
 	@echo ""
-	@echo "# Copying service file to /etc/systemd/system/"
+	
+	@echo "# Copying service file to $(SERVICEPATH)"
 	@echo "# This action requires sudo."
-	sudo cp touchcursor.service /etc/systemd/system/
+	sed -i 's/Group=input/Group=$(INPUTGROUP)/' $(SERVICEFILE)
+	sudo cp $(SERVICEFILE) $(SERVICEPATH)
 	@echo ""
+	
 	@echo "# Enabling and starting the service"
 	@echo "# This action requires sudo."
 	sudo systemctl daemon-reload
-	sudo systemctl enable touchcursor.service
-	sudo systemctl start touchcursor.service
+	sudo systemctl enable $(SERVICE)
+	sudo systemctl start $(SERVICE)
 
 uninstall:
 	@echo "# Stopping and disabling the service"
 	@echo "# This action requires sudo."
 	-sudo systemctl daemon-reload
-	-sudo systemctl stop touchcursor.service
-	-sudo systemctl disable touchcursor.service
+	-sudo systemctl stop $(SERVICE)
+	-sudo systemctl disable $(SERVICE)
 	@echo ""
-	@echo "# Removing service file from /etc/systemd/system/"
+
+	@echo "# Removing service file from $(SERVICEPATH)"
 	@echo "# This action requires sudo."
-	-sudo rm /etc/systemd/system/touchcursor.service
+	-sudo rm $(SERVICEPATH)/$(SERVICEFILE)
 	@echo ""
-	@echo "# Removing application from /usr/bin/"
+
+	@echo "# Removing application from $(INSTALLPATH)"
 	@echo "# This action requires sudo."
 	-sudo rm $(INSTALLPATH)/touchcursor
 	@echo ""
-	@echo "# Removing configuration file /etc/touchcursor/touchcursor.conf"
+
+	@echo "# Removing configuration file $(CONFIGPATH)/$(CONFIGFILE)"
 	@echo "# This action requires sudo."
-	-sudo rm /etc/touchcursor/touchcursor.conf
-	-sudo rm -r /etc/touchcursor
+	-sudo rm $(CONFIGPATH)/$(CONFIGFILE)
+	-sudo rm -r $(CONFIGPATH)
