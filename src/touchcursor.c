@@ -4,10 +4,6 @@
  *
  * Special thanks to Thomas Bocek for the starting point for this application.
  * Special thanks to Martin Stone for the inspiration and Touch Cursor source.
- *
- * Running
- * make sure the file has the sudo execution permission, or run as sudo
- * pass the /dev/input/event# path of your keyboard
  */
 
 #include <stdio.h>

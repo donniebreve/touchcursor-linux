@@ -1,16 +1,9 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <linux/input.h>
-#include <linux/uinput.h>
-#include <dirent.h>
-
-#include <pwd.h>
-#include <grp.h>
 
 #include "config.h"
 #include "binding.h"
@@ -25,17 +18,18 @@ int main(int argc, char* argv[])
     readConfiguration();
     if (eventPath[0] == 0)
     {
-        fprintf(stderr, "error: please specify the keyboard device name in the configuration file\n");
+        fprintf(stdout, "error: please specify the keyboard device name in the configuration file\n");
         return EXIT_FAILURE;
     }
-
-    printf("keyboard event: '%s'\n", eventPath);
+    fprintf(stdout, "info: keyboard event: '%s'\n", eventPath);
 
     // Bind the input device
     bindInput(eventPath);
 
     // Bind the output device
     bindOutput();
+
+    fprintf(stdout, "info: running\n");
 
     // Read events
     struct input_event inputEvent;
