@@ -16,7 +16,7 @@
 int main(int argc, char* argv[])
 {
     readConfiguration();
-    if (eventPath[0] == 0)
+    if (eventPath[0] == '\0')
     {
         fprintf(stdout, "error: please specify the keyboard device name in the configuration file\n");
         return EXIT_FAILURE;
