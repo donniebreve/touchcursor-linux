@@ -56,7 +56,7 @@ void findDeviceEvent(char* deviceName)
     FILE* devicesFile = fopen(devicesFilePath, "r");
     if (!devicesFile)
     {
-        fprintf(stderr, "error: could not open /proc/bus/input/devices\n");
+        fprintf(stdout, "error: could not open /proc/bus/input/devices\n");
         return;
     }
 
@@ -98,6 +98,11 @@ void findDeviceEvent(char* deviceName)
         }
     }
 
+    if (!foundEvent)
+    {
+        fprintf(stdout, "error: could not find device: %s\n", deviceName);
+    }
+
     fclose(devicesFile);
     if (line) free(line);
 }
@@ -117,8 +122,6 @@ void readConfiguration()
 {
     configFilePath[0] = '\0';
     FILE* configFile;
-
-    fprintf(stdout, "info: YO\n");
 
     char* homePath = getenv("HOME");
     if (!homePath)
@@ -176,8 +179,13 @@ void readConfiguration()
         switch (section)
         {
             case device:
-                findDeviceEvent(line);
+            {
+                if (eventPath[0] == '\0')
+                {
+                    findDeviceEvent(line);
+                }
                 continue;
+            }
 
             case hyper:
             {
