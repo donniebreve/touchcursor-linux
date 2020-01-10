@@ -15,6 +15,15 @@ m - del
 y - insert
 ```
 
+# Removing previous installation
+## Disable the old service
+`sudo systemctl stop touchcusor.service`
+`sudo systemctl disable touchcusor.service`
+## Remove the old service file
+`sudo rm /etc/systemd/system/touchcursor.service`
+## Remove the old configuration file
+`sudo rm -r /etc/touchcursor`
+
 # How to install
 1. Clone or download this repo
 2. 'make' to build the application
