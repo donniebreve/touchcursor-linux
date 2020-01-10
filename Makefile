@@ -7,10 +7,10 @@ CC = gcc
 CFLAGS = -g -Wall
 INSTALLPATH?=/usr/bin
 # Configuration variables
-SERVICEPATH = /etc/systemd/system
-SERVICEFILE = touchcursor@.service
-SERVICE := touchcursor@$(USER).service
-CONFIGPATH = /etc/touchcursor
+SERVICEPATH = $(HOME)/.config/systemd/user
+SERVICEFILE = touchcursor.service
+SERVICE := touchcursor.service
+CONFIGPATH = $(HOME)/.config/touchcursor
 CONFIGFILE = touchcursor.conf
 INPUTFILE = $(shell find /dev/input/event* | head -n 1)
 INPUTGROUP = $(shell stat -c '%G' $(INPUTFILE))
@@ -47,45 +47,41 @@ install:
 	@echo "# Copying application to $(INSTALLPATH)"
 	@echo "# This action requires sudo."
 	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
+	sudo chmod u+s $(INSTALLPATH)/$(TARGET)
 	@echo ""
 
 	@echo "# Copying default configuration file to $(CONFIGPATH)/$(CONFIGFILE)"
-	@echo "# This action requires sudo."
-	sudo mkdir -p $(CONFIGPATH)
-	sudo cp -n $(CONFIGFILE) $(CONFIGPATH)
+	mkdir -p $(CONFIGPATH)
+	cp -n $(CONFIGFILE) $(CONFIGPATH)
 	@echo ""
 	
 	@echo "# Copying service file to $(SERVICEPATH)"
-	@echo "# This action requires sudo."
-	sed -i 's/Group=input/Group=$(INPUTGROUP)/' $(SERVICEFILE)
-	sudo cp $(SERVICEFILE) $(SERVICEPATH)
+	mkdir -p $(SERVICEPATH)
+	cp -f $(SERVICEFILE) $(SERVICEPATH)
 	@echo ""
 	
 	@echo "# Enabling and starting the service"
-	@echo "# This action requires sudo."
-	sudo systemctl daemon-reload
-	sudo systemctl enable $(SERVICE)
-	sudo systemctl start $(SERVICE)
+	systemctl --user daemon-reload
+	systemctl --user enable $(SERVICE)
+	systemctl --user start $(SERVICE)
 
 uninstall:
 	@echo "# Stopping and disabling the service"
-	@echo "# This action requires sudo."
-	-sudo systemctl daemon-reload
-	-sudo systemctl stop $(SERVICE)
-	-sudo systemctl disable $(SERVICE)
+	-systemctl --user stop $(SERVICE)
+	-systemctl --user disable $(SERVICE)
+	@echo ""
+
+	@echo "# Removing configuration file $(CONFIGPATH)/$(CONFIGFILE)"
+	-rm $(CONFIGPATH)/$(CONFIGFILE)
+	-rm -r $(CONFIGPATH)
 	@echo ""
 
 	@echo "# Removing service file from $(SERVICEPATH)"
-	@echo "# This action requires sudo."
-	-sudo rm $(SERVICEPATH)/$(SERVICEFILE)
+	-rm $(SERVICEPATH)/$(SERVICEFILE)
+	-rm -r $(SERVICEPATH)
 	@echo ""
 
 	@echo "# Removing application from $(INSTALLPATH)"
 	@echo "# This action requires sudo."
-	-sudo rm $(INSTALLPATH)/touchcursor
+	-sudo rm $(INSTALLPATH)/$(TARGET)
 	@echo ""
-
-	@echo "# Removing configuration file $(CONFIGPATH)/$(CONFIGFILE)"
-	@echo "# This action requires sudo."
-	-sudo rm $(CONFIGPATH)/$(CONFIGFILE)
-	-sudo rm -r $(CONFIGPATH)

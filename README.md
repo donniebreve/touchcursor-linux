@@ -1,6 +1,3 @@
-# WARNING
-The latest build will capture the keyboard as your user before you are able to log in to the PC. You may run the service after logging in, but do not enable the service. Fix incoming soon.
-
 # touchcursor-linux
 This application was designed to remap the `uiophjklnmy` keys to different movement keys when the spacebar is pressed down, allowing you to keep your hands on the home row. It has grown to allow remapping all the keys, even the hyper key.
 
@@ -22,9 +19,8 @@ y - insert
 1. Clone or download this repo
 2. 'make' to build the application
 3. 'make install' to install the application
-4. Copy the config file to your user directory `cp -n /etc/touchcursor/touchcursor.conf ~/.config/touchcursor/`
-5. Modify the config file to your liking
-6. Restart the service `sudo systemctl restart touchcursor@user.service`
+5. Modify the config file (`~/.config/touchcursor/touchcursor.conf`) to your liking
+6. Restart the service `systemctl --user restart touchcursor.service`
 
 # Thanks to
 [Thomas Bocek, Dvorak](https://github.com/tbocek/dvorak): Check him out and thanks for the starting point. Good examples for capturing and modifying keyboard input in Linux, specifically Wayland.  

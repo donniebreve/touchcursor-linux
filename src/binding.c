@@ -19,16 +19,15 @@ int output;
 /**
  * Binds to the input device using ioctl.
  */
-int bindInput(char* eventPath)
+void bindInput(char* eventPath)
 {
     // Open the keyboard device
     fprintf(stdout, "info: attempting to attach to: '%s'\n", eventPath);
-
     input = open(eventPath, O_RDONLY);
     if (input < 0)
     {
-        fprintf(stdout, "error: cannot open the input device, is this file set to the 'input' group (or equivalent)?: %s.\n", strerror(errno));
-        return EXIT_FAILURE;
+        fprintf(stdout, "error: cannot open the input device, is this file set to the 'input' group or equivalent?: %s.\n", strerror(errno));
+        return;
     }
 
     // Retrieve the device name
@@ -36,7 +35,7 @@ int bindInput(char* eventPath)
     if (ioctl(input, EVIOCGNAME(sizeof(keyboardName) - 1), keyboardName) < 0)
     {
         fprintf(stdout, "error: cannot get the device name: %s\n", strerror(errno));
-        return EXIT_FAILURE;
+        return;
     }
     else
     {
@@ -46,7 +45,7 @@ int bindInput(char* eventPath)
     if (strcasestr(keyboardName, "Virtual TouchCursor Keyboard") != NULL)
     {
         fprintf(stdout, "error: cannot attach to the virtual device: %s.\n", strerror(errno));
-        return EXIT_FAILURE;
+        return;
     }
     // Allow last key press to go through
     // Grabbing the keys too quickly prevents the last key up event from being sent
@@ -56,15 +55,15 @@ int bindInput(char* eventPath)
     if (ioctl(input, EVIOCGRAB, 1) < 0)
     {
         fprintf(stdout, "error: EVIOCGRAB: %s.\n", strerror(errno));
-        return EXIT_FAILURE;
+        return;
     }
-    return EXIT_SUCCESS;
+    fprintf(stdout, "info: successfully captured input device\n");
 }
 
 /**
  * Creates and binds a virtual output device using ioctl and uinput.
  */
-int bindOutput()
+void bindOutput()
 {
     // Define the virtual keyboard
     struct uinput_user_dev virtualKeyboard;
@@ -80,7 +79,7 @@ int bindOutput()
     if (output < 0)
     {
         fprintf(stdout, "error: failed to open /dev/uinput: %s.\n", strerror(errno));
-        return EXIT_FAILURE;
+        return;
     }
     // Enable key press/release event
     if (ioctl(output, UI_SET_EVBIT, EV_KEY) < 0)
@@ -93,7 +92,7 @@ int bindOutput()
         if (ioctl(output, UI_SET_KEYBIT, i) < 0)
         {
             fprintf(stdout, "error: cannot set key bit: %s.\n", strerror(errno));
-            return EXIT_FAILURE;
+            return;
         }
     }
     // Enable synchronization event
@@ -111,5 +110,5 @@ int bindOutput()
     {
         fprintf(stdout, "error: ioctl: UI_DEV_CREATE: %s\n", strerror(errno));
     }
-    return EXIT_SUCCESS;
+    fprintf(stdout, "info: successfully created virtual output device\n");
 }
