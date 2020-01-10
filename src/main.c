@@ -25,9 +25,19 @@ int main(int argc, char* argv[])
 
     // Bind the input device
     bindInput(eventPath);
+    if (input == -1)
+    {
+        fprintf(stdout, "error: could not capture the keyboard device\n");
+        return EXIT_FAILURE;
+    }
 
     // Bind the output device
     bindOutput();
+    if (output == -1)
+    {
+        fprintf(stdout, "error: could not create the virtual keyboard device\n");
+        return EXIT_FAILURE;
+    }
 
     fprintf(stdout, "info: running\n");
 

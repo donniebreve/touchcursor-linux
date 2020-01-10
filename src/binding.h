@@ -2,9 +2,9 @@
 #define binding_header
 
 extern int input;
-int bindInput(char* fileDescriptor);
+void bindInput(char* fileDescriptor);
 
 extern int output;
-int bindOutput();
+void bindOutput();
 
 #endif
