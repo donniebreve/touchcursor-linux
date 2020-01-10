@@ -38,7 +38,6 @@ int isModifier(int code)
 int convertKeyStringToCode(char* keyString)
 {
     if (strcmp(keyString, "KEY_ESC") == 0) return KEY_ESC;
-    else if (strcmp(keyString, "KEY_TAB") == 0) return KEY_TAB;
     else if (strcmp(keyString, "KEY_1") == 0) return KEY_1;
     else if (strcmp(keyString, "KEY_2") == 0) return KEY_2;
     else if (strcmp(keyString, "KEY_3") == 0) return KEY_3;
@@ -143,6 +142,7 @@ int convertKeyStringToCode(char* keyString)
     else if (strcmp(keyString, "KEY_PAUSE") == 0) return KEY_PAUSE;
     else if (strcmp(keyString, "KEY_LEFTMETA") == 0) return KEY_LEFTMETA;
     else if (strcmp(keyString, "KEY_RIGHTMETA") == 0) return KEY_RIGHTMETA;
+    else if (strcmp(keyString, "KEY_MENU") == 0) return KEY_MENU;
     else if (strcmp(keyString, "KEY_F13") == 0) return KEY_F13;
     else if (strcmp(keyString, "KEY_F14") == 0) return KEY_F14;
     else if (strcmp(keyString, "KEY_F15") == 0) return KEY_F15;
