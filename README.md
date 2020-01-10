@@ -1,3 +1,6 @@
+# WARNING
+The latest build will capture the keyboard as your user before you are able to log in to the PC. You may run the service after logging in, but do not enable the service. Fix incoming soon.
+
 # touchcursor-linux
 This application was designed to remap the `uiophjklnmy` keys to different movement keys when the spacebar is pressed down, allowing you to keep your hands on the home row. It has grown to allow remapping all the keys, even the hyper key.
 
