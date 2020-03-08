@@ -39,11 +39,16 @@ $(OUTPATH)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(OUTPATH)
 	$(CC) $(OBJECTS) -Wall -o $@
 
+
 clean:
 	-rm -f obj/*.o
 	-rm -f $(OUTPATH)/$(TARGET)
 
 install:
+	@echo "# Stopping the service"
+	-systemctl --user stop $(SERVICE)
+	@echo ""
+	
 	@echo "# Copying application to $(INSTALLPATH)"
 	@echo "# This action requires sudo."
 	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
