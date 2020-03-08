@@ -53,14 +53,14 @@ void findDeviceEvent(char* deviceConfigValue)
     eventPath[0] = '\0';
 
     char* deviceName = deviceConfigValue;
-    int number = 1;
+    int deviceNumber = 1;
     if (strstr(deviceConfigValue, ":"))
     {
         char* tokens = deviceConfigValue;
         char* token = strsep(&tokens, ":");
         deviceName = token;
         token = strsep(&tokens, ":");
-        number = atoi(token);
+        deviceNumber = atoi(token);
     }
 
     char* devicesFilePath = "/proc/bus/input/devices";
@@ -73,6 +73,7 @@ void findDeviceEvent(char* deviceConfigValue)
 
     char* line = NULL;
     int matchedName = 0;
+    int matchedCount = 0;
     int foundEvent = 0;
     size_t length = 0;
     ssize_t result;
@@ -86,11 +87,14 @@ void findDeviceEvent(char* deviceConfigValue)
             char* trimmedLine = trimString(line + 3);
             if (strcmp(trimmedLine, deviceName) == 0)
             {
-                matchedName++;
+                if (deviceNumber == ++matchedCount)
+                {
+                    matchedName = 1;
+                }
                 continue;
             }
         }
-        if (matchedName == number)
+        if (matchedName)
         {
             if (!startsWith(line, "H: Handlers")) continue;
             char* tokens = line;
