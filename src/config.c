@@ -48,9 +48,20 @@ int isCommentOrEmpty(char* line)
 /**
  * Searches /proc/bus/input/devices for the device event.
  */
-void findDeviceEvent(char* deviceName)
+void findDeviceEvent(char* deviceConfigValue)
 {
     eventPath[0] = '\0';
+
+    char* deviceName = deviceConfigValue;
+    int number = 1;
+    if (strstr(deviceConfigValue, ":"))
+    {
+        char* tokens = deviceConfigValue;
+        char* token = strsep(&tokens, ":");
+        deviceName = token;
+        token = strsep(&tokens, ":");
+        number = atoi(token);
+    }
 
     char* devicesFilePath = "/proc/bus/input/devices";
     FILE* devicesFile = fopen(devicesFilePath, "r");
@@ -75,11 +86,11 @@ void findDeviceEvent(char* deviceName)
             char* trimmedLine = trimString(line + 3);
             if (strcmp(trimmedLine, deviceName) == 0)
             {
-                matchedName = 1;
+                matchedName++;
                 continue;
             }
         }
-        if (matchedName)
+        if (matchedName == number)
         {
             if (!startsWith(line, "H: Handlers")) continue;
             char* tokens = line;
@@ -100,7 +111,7 @@ void findDeviceEvent(char* deviceName)
 
     if (!foundEvent)
     {
-        fprintf(stdout, "error: could not find device: %s\n", deviceName);
+        fprintf(stdout, "error: could not find device: %s\n", deviceConfigValue);
     }
 
     fclose(devicesFile);
