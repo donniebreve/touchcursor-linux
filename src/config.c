@@ -38,11 +38,31 @@ int startsWith(const char* str, const char* value)
 }
 
 /**
+ * Checks for the device number if it is configured.
+ */
+int getDeviceNumber(char* deviceConfigValue)
+{
+    int deviceNumber = 1;
+    int length = strlen(deviceConfigValue);
+    for (int i = length - 1; i >= 0; i--)
+    {
+        if (deviceConfigValue[i] == '\0') break;
+        if (deviceConfigValue[i] == '"') break;
+        if (deviceConfigValue[i] == ':')
+        {
+            deviceNumber = atoi(deviceConfigValue + i + 1);
+            deviceConfigValue[i] = '\0';
+        }
+    }
+    return deviceNumber;
+}
+
+/**
  * Checks for commented or empty lines.
  */
 int isCommentOrEmpty(char* line)
 {
-    return line [0] == '#' || line[0] == '\0';
+    return line[0] == '#' || line[0] == '\0';
 }
 
 /**
@@ -51,23 +71,18 @@ int isCommentOrEmpty(char* line)
 void findDeviceEvent(char* deviceConfigValue)
 {
     eventPath[0] = '\0';
-
+    
     char* deviceName = deviceConfigValue;
-    int deviceNumber = 1;
-    if (strstr(deviceConfigValue, ":"))
-    {
-        char* tokens = deviceConfigValue;
-        char* token = strsep(&tokens, ":");
-        deviceName = token;
-        token = strsep(&tokens, ":");
-        deviceNumber = atoi(token);
-    }
+    int deviceNumber = getDeviceNumber(deviceName);
+
+    fprintf(stdout, "info: deviceName: %s\n", deviceName);
+    fprintf(stdout, "info: deviceNumber: %i\n", deviceNumber);
 
     char* devicesFilePath = "/proc/bus/input/devices";
     FILE* devicesFile = fopen(devicesFilePath, "r");
     if (!devicesFile)
     {
-        fprintf(stdout, "error: could not open /proc/bus/input/devices\n");
+        fprintf(stderr, "error: could not open /proc/bus/input/devices\n");
         return;
     }
 
@@ -106,6 +121,7 @@ void findDeviceEvent(char* deviceConfigValue)
                 {
                     strcat(eventPath, "/dev/input/");
                     strcat(eventPath, token);
+                    fprintf(stdout, "info: found the keyboard event\n");
                     foundEvent = 1;
                     break;
                 }
@@ -115,7 +131,7 @@ void findDeviceEvent(char* deviceConfigValue)
 
     if (!foundEvent)
     {
-        fprintf(stdout, "error: could not find device: %s\n", deviceConfigValue);
+        fprintf(stderr, "error: could not find device: %s\n", deviceConfigValue);
     }
 
     fclose(devicesFile);
@@ -141,7 +157,7 @@ void readConfiguration()
     char* homePath = getenv("HOME");
     if (!homePath)
     {
-        fprintf(stdout, "error: home path environment variable not specified\n");
+        fprintf(stderr, "error: home path environment variable not specified\n");
     }
     if (homePath)
     {
@@ -158,7 +174,7 @@ void readConfiguration()
     }
     if (!configFile)
     {
-        fprintf(stdout, "error: could not open the configuration file\n");
+        fprintf(stderr, "error: could not open the configuration file\n");
         return;
     }
     fprintf(stdout, "info: found the configuration file\n");

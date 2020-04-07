@@ -18,16 +18,15 @@ int main(int argc, char* argv[])
     readConfiguration();
     if (eventPath[0] == '\0')
     {
-        fprintf(stdout, "error: please specify the keyboard device name in the configuration file\n");
+        fprintf(stderr, "error: please specify the keyboard device name in the configuration file\n");
         return EXIT_FAILURE;
     }
-    fprintf(stdout, "info: keyboard event: '%s'\n", eventPath);
 
     // Bind the input device
     bindInput(eventPath);
     if (input == -1)
     {
-        fprintf(stdout, "error: could not capture the keyboard device\n");
+        fprintf(stderr, "error: could not capture the keyboard device\n");
         return EXIT_FAILURE;
     }
 
@@ -35,7 +34,7 @@ int main(int argc, char* argv[])
     bindOutput();
     if (output == -1)
     {
-        fprintf(stdout, "error: could not create the virtual keyboard device\n");
+        fprintf(stderr, "error: could not create the virtual keyboard device\n");
         return EXIT_FAILURE;
     }
 
