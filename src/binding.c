@@ -26,7 +26,7 @@ void bindInput(char* eventPath)
     input = open(eventPath, O_RDONLY);
     if (input < 0)
     {
-        fprintf(stdout, "error: cannot open the input device, is this file set to the 'input' group or equivalent?: %s.\n", strerror(errno));
+        fprintf(stderr, "error: cannot open the input device, is this file set to the 'input' group or equivalent?: %s.\n", strerror(errno));
         return;
     }
 
@@ -34,7 +34,7 @@ void bindInput(char* eventPath)
     char keyboardName[256] = "Unknown";
     if (ioctl(input, EVIOCGNAME(sizeof(keyboardName) - 1), keyboardName) < 0)
     {
-        fprintf(stdout, "error: cannot get the device name: %s\n", strerror(errno));
+        fprintf(stderr, "error: cannot get the device name: %s\n", strerror(errno));
         return;
     }
     else
