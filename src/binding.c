@@ -66,44 +66,40 @@ void bindInput(char* eventPath)
 void bindOutput()
 {
     // Define the virtual keyboard
-    struct uinput_user_dev virtualKeyboard;
+    struct uinput_setup virtualKeyboard;
     memset(&virtualKeyboard, 0, sizeof(virtualKeyboard));
-    snprintf(virtualKeyboard.name, UINPUT_MAX_NAME_SIZE, "Virtual TouchCursor Keyboard");
+    strcpy(virtualKeyboard.name, "Virtual TouchCursor Keyboard");
     virtualKeyboard.id.bustype = BUS_USB;
     virtualKeyboard.id.vendor  = 0x01;
     virtualKeyboard.id.product = 0x01;
     virtualKeyboard.id.version = 1;
-
-    // Open the output
+    // Open uinput
     output = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if (output < 0)
     {
         fprintf(stdout, "error: failed to open /dev/uinput: %s.\n", strerror(errno));
         return;
     }
-    // Enable key press/release event
+    // Enable key press/release events
     if (ioctl(output, UI_SET_EVBIT, EV_KEY) < 0)
     {
         fprintf(stdout, "error: cannot set EV_KEY on output: %s.\n", strerror(errno));
     }
-    // Enable set of KEY events
-    for (int i = 0; i < KEY_MAX; i++)
+    // Enable the set of KEY events
+    // (I used to have < KEY_MAX here, but that seems to be causing issues?)
+    for (int i = 0; i < 573; i++) 
     {
-        if (ioctl(output, UI_SET_KEYBIT, i) < 0)
+        int result = ioctl(output, UI_SET_KEYBIT, i);
+        if (result < 0)
         {
             fprintf(stdout, "error: cannot set key bit: %s.\n", strerror(errno));
             return;
         }
     }
-    // Enable synchronization event
-    if (ioctl(output, UI_SET_EVBIT, EV_SYN) < 0)
+    // Set up the device
+    if (ioctl(output, UI_DEV_SETUP, &virtualKeyboard) < 0)
     {
-        fprintf(stdout, "error: cannot set EV_SYN on output: %s\n", strerror(errno));
-    }
-    // Write the uinput_user_dev structure into uinput file descriptor
-    if (write(output, &virtualKeyboard, sizeof(virtualKeyboard)) < 0)
-    {
-        fprintf(stdout, "error: cannot write uinput_user_dev struct into uinput file descriptor: %s\n", strerror(errno));
+       fprintf(stdout, "error: ioctl: UI_DEV_SETUP: %s\n", strerror(errno)); 
     }
     // create the device via an IOCTL call 
     if (ioctl(output, UI_DEV_CREATE) < 0)
