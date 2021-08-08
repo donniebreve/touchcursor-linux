@@ -83,7 +83,7 @@ uninstall:
 
 	@echo "# Removing service file from $(SERVICEPATH)"
 	-rm $(SERVICEPATH)/$(SERVICEFILE)
-	-rm -r $(SERVICEPATH)
+	-rm -d $(SERVICEPATH)
 	@echo ""
 
 	@echo "# Removing application from $(INSTALLPATH)"
