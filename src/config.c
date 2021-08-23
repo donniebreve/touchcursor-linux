@@ -13,6 +13,26 @@ int hyperKey;
 int keymap[256];
 
 /**
+ * @brief Trim comment from the end of the string started by '#' character.
+ *
+ * @param s String to be trimmed.
+ * @return char* Trimmed string without any comments.
+ */
+char* trimComment(char* s)
+{
+    if (s != NULL)
+    {
+        char *p  = strchr(s, '#');
+        if (p != NULL)
+        {
+            // p points to the start of the comment.
+            *p = '\0';
+        }
+    }
+    return s;
+}
+
+/**
  * Trims a string.
  * credit to chux: https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way#122721
  */
@@ -71,7 +91,7 @@ int isCommentOrEmpty(char* line)
 void findDeviceEvent(char* deviceConfigValue)
 {
     eventPath[0] = '\0';
-    
+
     char* deviceName = deviceConfigValue;
     int deviceNumber = getDeviceNumber(deviceName);
 
@@ -184,7 +204,8 @@ void readConfiguration()
     ssize_t result = -1;
     while ((result = getline(&buffer, &length, configFile)) != -1)
     {
-        char* line = trimString(buffer);
+        char* line = trimComment(buffer);
+        line = trimString(line);
 
         // Comment or empty line
         if (isCommentOrEmpty(line)) continue;
