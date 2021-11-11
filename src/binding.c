@@ -29,7 +29,6 @@ void bindInput(char* eventPath)
         fprintf(stderr, "error: cannot open the input device, is this file set to the 'input' group or equivalent?: %s.\n", strerror(errno));
         return;
     }
-
     // Retrieve the device name
     char keyboardName[256] = "Unknown";
     if (ioctl(input, EVIOCGNAME(sizeof(keyboardName) - 1), keyboardName) < 0)
@@ -87,7 +86,7 @@ void bindOutput()
     }
     // Enable the set of KEY events
     // (I used to have < KEY_MAX here, but that seems to be causing issues?)
-    for (int i = 0; i < 573; i++) 
+    for (int i = 0; i <= 572; i++) 
     {
         int result = ioctl(output, UI_SET_KEYBIT, i);
         if (result < 0)
@@ -101,7 +100,7 @@ void bindOutput()
     {
        fprintf(stdout, "error: ioctl: UI_DEV_SETUP: %s\n", strerror(errno)); 
     }
-    // create the device via an IOCTL call 
+    // Create the device via an IOCTL call 
     if (ioctl(output, UI_DEV_CREATE) < 0)
     {
         fprintf(stdout, "error: ioctl: UI_DEV_CREATE: %s\n", strerror(errno));
