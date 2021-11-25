@@ -1,11 +1,3 @@
-/**
- * Touch Cursor for Linux
- * Replicates the touch cursor style movement under linux (works under wayland)
- *
- * Special thanks to Thomas Bocek for the starting point for this application.
- * Special thanks to Martin Stone for the inspiration and Touch Cursor source.
- */
-
 #include <stdio.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
@@ -36,16 +28,6 @@ static int isHyper(int code)
 }
 
 /**
- * Checks if the event is key down.
- * Linux input sends value=2 for repeated key down.
- * We treat them as keydown events for processing.
- */
-static int isDown(int value)
-{
-    return value == 1 || value == 2;
-}
-
-/**
  * Checks if the key has been mapped.
  */
 static int isMapped(int code)
@@ -55,7 +37,6 @@ static int isMapped(int code)
 
 /**
  * Converts input key to touch cursor key
- * To do: make this configurable
  */
 static int convert(int code)
 {
