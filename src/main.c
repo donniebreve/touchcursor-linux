@@ -21,25 +21,19 @@ int main(int argc, char* argv[])
         fprintf(stderr, "error: please specify the keyboard device name in the configuration file\n");
         return EXIT_FAILURE;
     }
-
     // Bind the input device
-    bindInput(eventPath);
-    if (input == -1)
+    if (bindInput(eventPath) != EXIT_SUCCESS)
     {
         fprintf(stderr, "error: could not capture the keyboard device\n");
         return EXIT_FAILURE;
     }
-
     // Bind the output device
-    bindOutput();
-    if (output == -1)
+    if (bindOutput() != EXIT_SUCCESS)
     {
         fprintf(stderr, "error: could not create the virtual keyboard device\n");
         return EXIT_FAILURE;
     }
-
     fprintf(stdout, "info: running\n");
-
     // Read events
     struct input_event inputEvent;
     ssize_t result;
