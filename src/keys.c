@@ -5,7 +5,6 @@
 
 /**
  * Checks if the key is a modifier key.
- * Note: possibly deprecated.
  */
 int isModifier(int code)
 {
