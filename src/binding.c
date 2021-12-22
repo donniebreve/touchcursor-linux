@@ -83,8 +83,9 @@ int bindOutput()
         return EXIT_FAILURE;
     }
     // Enable the set of KEY events
-    // (I used to have < KEY_MAX here, but that seems to be causing issues?)
-    for (int i = 0; i <= 572; i++) 
+    // Add all keybits up to the constant KEY_INTERESTING, which the kernel defines it as the end of the set 
+    // of keybits that are common to keyboard devices.
+    for (int i = 0; i <= KEY_MIN_INTERESTING; i++)
     {
         int result = ioctl(output, UI_SET_KEYBIT, i);
         if (result < 0)
