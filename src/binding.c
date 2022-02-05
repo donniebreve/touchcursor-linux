@@ -83,8 +83,7 @@ int bindOutput()
         return EXIT_FAILURE;
     }
     // Enable the set of KEY events
-    // (I used to have < KEY_MAX here, but that seems to be causing issues?)
-    for (int i = 0; i <= 572; i++) 
+    for (int i = 0; i <= MAX_KEYS_TO_ENABLE_KEY_EVENTS_HANDLING_FOR; i++)
     {
         int result = ioctl(output, UI_SET_KEYBIT, i);
         if (result < 0)
