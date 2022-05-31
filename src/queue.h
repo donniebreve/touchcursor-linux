@@ -1,5 +1,5 @@
-#ifndef queue_header
-#define queue_header
+#ifndef queue_h
+#define queue_h
 
 /**
  * Clears the queue.

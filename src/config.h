@@ -1,5 +1,5 @@
-#ifndef config_header
-#define config_header
+#ifndef config_h
+#define config_h
 
 /**
  * The event path for the device.

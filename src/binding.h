@@ -1,5 +1,5 @@
-#ifndef binding_header
-#define binding_header
+#ifndef binding_h
+#define binding_h
 
 /**
  * @brief The highest input event code to enable key events handling for.
