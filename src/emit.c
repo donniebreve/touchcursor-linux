@@ -7,7 +7,7 @@
 
 /**
  * Emits a key event.
- */
+ * */
 int emit(int type, int code, int value)
 {
    //printf("emit: code=%i value=%i\n", code, value); 

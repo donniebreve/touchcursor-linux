@@ -18,7 +18,7 @@ int output = -1;
 
 /**
  * Binds to the input device using ioctl.
- */
+ * */
 int bindInput(char* eventPath)
 {
     // Open the keyboard device
@@ -58,7 +58,7 @@ int bindInput(char* eventPath)
 
 /**
  * Creates and binds a virtual output device using ioctl and uinput.
- */
+ * */
 int bindOutput()
 {
     // Define the virtual keyboard

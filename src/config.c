@@ -9,15 +9,18 @@
 
 char configFilePath[256];
 char eventPath[18];
+
 int hyperKey;
 int keymap[256];
+
+int remap[256];
 
 /**
  * @brief Trim comment from the end of the string started by '#' character.
  *
  * @param s String to be trimmed.
  * @return char* Trimmed string without any comments.
- */
+ * */
 char* trimComment(char* s)
 {
     if (s != NULL)
@@ -35,7 +38,7 @@ char* trimComment(char* s)
 /**
  * Trims a string.
  * credit to chux: https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way#122721
- */
+ * */
 char* trimString(char* s)
 {
     while (isspace((unsigned char)*s)) s++;
@@ -160,20 +163,21 @@ void findDeviceEvent(char* deviceConfigValue)
 
 static enum sections
 {
-    none,
-    device,
-    hyper,
-    bindings
+    configuration_none,
+    configuration_device,
+    configuration_remap,
+    configuration_hyper,
+    configuration_bindings
 } section;
 
 /**
  * Reads the configuration file.
- */
+ * */
 void readConfiguration()
 {
+    // Find the configuration file
     configFilePath[0] = '\0';
     FILE* configFile;
-
     char* homePath = getenv("HOME");
     if (!homePath)
     {
@@ -198,7 +202,7 @@ void readConfiguration()
         return;
     }
     fprintf(stdout, "info: found the configuration file\n");
-
+    // Parse the configuration file
     char* buffer = NULL;
     size_t length = 0;
     ssize_t result = -1;
@@ -206,68 +210,84 @@ void readConfiguration()
     {
         char* line = trimComment(buffer);
         line = trimString(line);
-
         // Comment or empty line
-        if (isCommentOrEmpty(line)) continue;
-
+        if (isCommentOrEmpty(line))
+        {
+            continue;
+        }
         // Check for section
         if (strncmp(line, "[Device]", strlen(line)) == 0)
         {
-            section = device;
+            section = configuration_device;
+            continue;
+        }
+        if (strncmp(line, "[Remap]", strlen(line)) == 0)
+        {
+            section = configuration_remap;
             continue;
         }
         if (strncmp(line, "[Hyper]", strlen(line)) == 0)
         {
-            section = hyper;
+            section = configuration_hyper;
             continue;
         }
         if (strncmp(line, "[Bindings]", strlen(line)) == 0)
         {
-            section = bindings;
+            section = configuration_bindings;
             continue;
         }
-
         // Read configurations
         switch (section)
         {
-            case device:
-            {
-                if (eventPath[0] == '\0')
+            case configuration_device:
                 {
-                    findDeviceEvent(line);
+                    if (eventPath[0] == '\0')
+                    {
+                        findDeviceEvent(line);
+                    }
+                    continue;
                 }
-                continue;
-            }
-
-            case hyper:
-            {
-                char* tokens = line;
-                char* token = strsep(&tokens, "=");
-                token = strsep(&tokens, "=");
-                int code = convertKeyStringToCode(token);
-                hyperKey = code;
-                break;
-            }
-
-            case bindings:
-            {
-                char* tokens = line;
-                char* token = strsep(&tokens, "=");
-                int fromCode = convertKeyStringToCode(token);
-                token = strsep(&tokens, "=");
-                int toCode = convertKeyStringToCode(token);
-                keymap[fromCode] = toCode;
-                break;
-            }
-
-            case none:
+            case configuration_remap:
+                {
+                    char* tokens = line;
+                    char* token = strsep(&tokens, "=");
+                    int fromCode = convertKeyStringToCode(token);
+                    token = strsep(&tokens, "=");
+                    int toCode = convertKeyStringToCode(token);
+                    remap[fromCode] = toCode;
+                    break;
+                }
+            case configuration_hyper:
+                {
+                    char* tokens = line;
+                    char* token = strsep(&tokens, "=");
+                    token = strsep(&tokens, "=");
+                    int code = convertKeyStringToCode(token);
+                    hyperKey = code;
+                    break;
+                }
+            case configuration_bindings:
+                {
+                    char* tokens = line;
+                    char* token = strsep(&tokens, "=");
+                    int fromCode = convertKeyStringToCode(token);
+                    token = strsep(&tokens, "=");
+                    int toCode = convertKeyStringToCode(token);
+                    keymap[fromCode] = toCode;
+                    break;
+                }
+            case configuration_none:
             default:
-                continue;
+                {
+                    continue;
+                }
         }
     }
-
     fclose(configFile);
-    if (buffer) free(buffer);
+    if (buffer)
+    {
+        free(buffer);
+    }
 }
 
 /**

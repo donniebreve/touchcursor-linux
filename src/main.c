@@ -8,11 +8,11 @@
 #include "config.h"
 #include "binding.h"
 #include "emit.h"
-#include "touchcursor.h"
+#include "mapper.h"
 
 /**
 * Main method.
-*/
+* */
 int main(int argc, char* argv[])
 {
     readConfiguration();
