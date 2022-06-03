@@ -15,14 +15,6 @@ enum states state = idle;
 static int hyperEmitted;
 
 /**
- * Converts input key to touch cursor key
- * */
-static int convert(int code)
-{
-    return keymap[code];
-}
-
-/**
  * Checks if the key is the hyper key.
  * */
 static int isHyper(int code)
@@ -39,6 +31,14 @@ static int isMapped(int code)
 }
 
 /**
+ * Converts the input code to the mapped code.
+ * */
+static int getMapped(int code)
+{
+    return keymap[code];
+}
+
+/**
  * Checks if the key has been permanently mapped.
  * */
 static int isRemapped(int code)
@@ -47,35 +47,36 @@ static int isRemapped(int code)
 }
 
 /**
- * Processes a key input event. Converts and emits events as necessary.
+ * Converts the input code to the remapped code.
+ * */
+static int getRemapped(int code)
+{
+    if (remap[code] != 0)
+    {
+        return remap[code];
+    }
+    return code;
+}
+
+/**
+ * * Processes a key input event. Converts and emits events as necessary.
  * */
 void processKey(int type, int code, int value)
 {
-    // printf("processKey: code=%i value=%i state=%i\n", code, value, state);
-    if (isRemapped(code))
-    {
-        code = remap[code];
-    }
+    printf("processKey(in): code=%i value=%i state=%i\n", code, value, state);
     switch (state)
     {
         case idle: // 0
             {
-                if (isHyper(code))
+                if (isHyper(code) && isDown(value))
                 {
-                    if (isDown(value))
-                    {
-                        state = hyper;
-                        hyperEmitted = 0;
-                        clearQueue();
-                    }
-                    else
-                    {
-                        emit(EV_KEY, code, value);
-                    }
+                    state = hyper;
+                    hyperEmitted = 0;
+                    clearQueue();
                 }
                 else
                 {
-                    emit(EV_KEY, code, value);
+                    emit(EV_KEY, getRemapped(code), value);
                 }
                 break;
             }
@@ -88,9 +89,9 @@ void processKey(int type, int code, int value)
                         state = idle;
                         if (!hyperEmitted)
                         {
-                            emit(EV_KEY, hyperKey, 1);
+                            emit(EV_KEY, getRemapped(code), 1);
                         }
-                        emit(EV_KEY, hyperKey, 0);
+                        emit(EV_KEY, getRemapped(code), 0);
                     }
                 }
                 else if (isMapped(code))
@@ -102,7 +103,7 @@ void processKey(int type, int code, int value)
                     }
                     else
                     {
-                        emit(EV_KEY, code, value);
+                        emit(EV_KEY, getRemapped(code), value);
                     }
                 }
                 else
@@ -111,14 +112,14 @@ void processKey(int type, int code, int value)
                     {
                         if (!hyperEmitted)
                         {
-                            emit(EV_KEY, hyperKey, 1);
+                            emit(EV_KEY, getRemapped(hyperKey), 1);
                             hyperEmitted = 1;
                         }
-                        emit(EV_KEY, code, value);
+                        emit(EV_KEY, getRemapped(code), value);
                     }
                     else
                     {
-                        emit(EV_KEY, code, value);
+                        emit(EV_KEY, getRemapped(code), value);
                     }
                 }
                 break;
@@ -132,14 +133,14 @@ void processKey(int type, int code, int value)
                         state = idle;
                         if (!hyperEmitted)
                         {
-                            emit(EV_KEY, hyperKey, 1);
+                            emit(EV_KEY, getRemapped(hyperKey), 1);
                         }
                         int length = lengthOfQueue();
                         for (int i = 0; i < length; i++)
                         {
-                            emit(EV_KEY, dequeue(), 1);
+                            emit(EV_KEY, getRemapped(dequeue()), 1);
                         }
-                        emit(EV_KEY, hyperKey, 0);
+                        emit(EV_KEY, getRemapped(hyperKey), 0);
                     }
                 }
                 else if (isMapped(code))
@@ -149,25 +150,25 @@ void processKey(int type, int code, int value)
                     {
                         if (lengthOfQueue() != 0)
                         {
-                            emit(EV_KEY, convert(peek()), 1);
+                            emit(EV_KEY, getMapped(peek()), 1);
                         }
                         enqueue(code);
-                        emit(EV_KEY, convert(code), value);
+                        emit(EV_KEY, getMapped(code), value);
                     }
                     else
                     {
                         int length = lengthOfQueue();
                         for (int i = 0; i < length; i++)
                         {
-                            emit(EV_KEY, convert(dequeue()), 1);
+                            emit(EV_KEY, getMapped(dequeue()), 1);
                         }
-                        emit(EV_KEY, convert(code), value);
+                        emit(EV_KEY, getMapped(code), value);
                     }
                 }
                 else
                 {
                     state = map;
-                    emit(EV_KEY, code, value);
+                    emit(EV_KEY, getRemapped(code), value);
                 }
                 break;
             }
@@ -181,7 +182,7 @@ void processKey(int type, int code, int value)
                         int length = lengthOfQueue();
                         for (int i = 0; i < length; i++)
                         {
-                            emit(EV_KEY, convert(dequeue()), 0);
+                            emit(EV_KEY, getMapped(dequeue()), 0);
                         }
                     }
                 }
@@ -190,18 +191,19 @@ void processKey(int type, int code, int value)
                     if (isDown(value))
                     {
                         enqueue(code);
-                        emit(EV_KEY, convert(code), value);
+                        emit(EV_KEY, getMapped(code), value);
                     }
                     else
                     {
-                        emit(EV_KEY, convert(code), value);
+                        emit(EV_KEY, getMapped(code), value);
                     }
                 }
                 else
                 {
-                    emit(EV_KEY, code, value);
+                    emit(EV_KEY, getRemapped(code), value);
                 }
                 break;
             }
     }
+    printf("processKey(out): state=%i\n", state);
 }
