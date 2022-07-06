@@ -90,6 +90,7 @@ void processKey(int type, int code, int value)
                 {
                     state = delay;
                     enqueue(code);
+                    emit(EV_KEY, convert(code), value); // emit the mapped key immediately to avoid an extra delay
                 }
                 else
                 {
