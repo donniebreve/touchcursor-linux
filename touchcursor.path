@@ -1,0 +1,9 @@
+[Unit]
+Description=Touchcursor Path Monitor
+StartLimitIntervalSec=0
+
+[Path]
+PathChanged=/dev/input
+
+[Install]
+WantedBy=default.target

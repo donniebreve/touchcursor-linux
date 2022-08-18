@@ -5,15 +5,14 @@ TARGET = touchcursor
 # LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall
-INSTALLPATH?=/usr/bin
+INSTALLPATH?=/$(HOME)/.local/bin
 # Configuration variables
 SERVICEPATH = $(HOME)/.config/systemd/user
 SERVICEFILE = touchcursor.service
-SERVICE := touchcursor.service
+SERVICE := touchcursor.path
+SERVICEPATHFILE = touchcursor.path
 CONFIGPATH = $(HOME)/.config/touchcursor
 CONFIGFILE = touchcursor.conf
-INPUTFILE = $(shell find /dev/input/event* | head -n 1)
-INPUTGROUP = $(shell stat -c '%G' $(INPUTFILE))
 
 .PHONY: default all clean
 
@@ -50,9 +49,8 @@ install:
 	@echo ""
 	
 	@echo "# Copying application to $(INSTALLPATH)"
-	@echo "# This action requires sudo."
-	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
-	sudo chmod u+s $(INSTALLPATH)/$(TARGET)
+	cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
+	chmod u+s $(INSTALLPATH)/$(TARGET)
 	@echo ""
 
 	@echo "# Copying default configuration file to $(CONFIGPATH)/$(CONFIGFILE)"
@@ -60,13 +58,15 @@ install:
 	cp -n $(CONFIGFILE) $(CONFIGPATH)
 	@echo ""
 	
-	@echo "# Copying service file to $(SERVICEPATH)"
+	@echo "# Copying service files to $(SERVICEPATH)"
 	mkdir -p $(SERVICEPATH)
 	cp -f $(SERVICEFILE) $(SERVICEPATH)
+	cp -f $(SERVICEPATHFILE) $(SERVICEPATH)
 	@echo ""
 	
 	@echo "# Enabling and starting the service"
 	systemctl --user daemon-reload
+	systemctl --user preset $(SERVICE)
 	systemctl --user enable $(SERVICE)
 	systemctl --user start $(SERVICE)
 
@@ -83,10 +83,10 @@ uninstall:
 
 	@echo "# Removing service file from $(SERVICEPATH)"
 	-rm $(SERVICEPATH)/$(SERVICEFILE)
+	-rm $(SERVICEPATH)/$(SERVICEPATHFILE)
 	-rm -d $(SERVICEPATH)
 	@echo ""
 
 	@echo "# Removing application from $(INSTALLPATH)"
-	@echo "# This action requires sudo."
-	-sudo rm $(INSTALLPATH)/$(TARGET)
+	-rm $(INSTALLPATH)/$(TARGET)
 	@echo ""
