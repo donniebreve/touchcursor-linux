@@ -11,6 +11,7 @@ SERVICEPATH = $(HOME)/.config/systemd/user
 SERVICEFILE = touchcursor.service
 SERVICE := touchcursor.path
 SERVICEPATHFILE = touchcursor.path
+SERVICETARGETPATH = default.taget.wants
 CONFIGPATH = $(HOME)/.config/touchcursor
 CONFIGFILE = touchcursor.conf
 
@@ -84,6 +85,7 @@ uninstall:
 	@echo "# Removing service file from $(SERVICEPATH)"
 	-rm $(SERVICEPATH)/$(SERVICEFILE)
 	-rm $(SERVICEPATH)/$(SERVICEPATHFILE)
+	-rm $(SERVICEPATH)/$(SERVICETARGETPATH)/$(SERVICEPATHFILE)
 	-rm -d $(SERVICEPATH)
 	@echo ""
 
