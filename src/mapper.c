@@ -63,7 +63,7 @@ static int getRemapped(int code)
  * */
 void processKey(int type, int code, int value)
 {
-    printf("processKey(in): code=%i value=%i state=%i\n", code, value, state);
+    //printf("processKey(in): code=%i value=%i state=%i\n", code, value, state);
     switch (state)
     {
         case idle: // 0
@@ -205,5 +205,5 @@ void processKey(int type, int code, int value)
                 break;
             }
     }
-    printf("processKey(out): state=%i\n", state);
+    //printf("processKey(out): state=%i\n", state);
 }
