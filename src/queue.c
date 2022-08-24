@@ -11,7 +11,7 @@ static int head = 0;
 
 /**
  * Clears the queue.
- */
+ * */
 void clearQueue()
 {
     for (int i = 0; i < length; i++)
@@ -22,7 +22,7 @@ void clearQueue()
 
 /**
  * Returns the current length of the queue.
- */
+ * */
 int lengthOfQueue()
 {
     return ((tail + length) - head) % length;
@@ -30,7 +30,7 @@ int lengthOfQueue()
 
 /**
  * Pushes the value on the queue, if the value does not already exist in the queue.
- */
+ * */
 void enqueue(int value)
 {
     for (int i = head; i != tail; i = (i + 1) % length)
@@ -51,7 +51,7 @@ void enqueue(int value)
 
 /**
  * Removes the first value from the queue and returns it.
- */
+ * */
 int dequeue()
 {
     if (head == tail)
@@ -65,7 +65,7 @@ int dequeue()
 
 /**
  * Returns the first value in the queue without removing it.
- */
+ * */
 int peek()
 {
     if (head == tail)

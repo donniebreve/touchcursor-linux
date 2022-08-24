@@ -44,11 +44,23 @@ clean:
 	-rm -f obj/*.o
 	-rm -f $(OUTPATH)/$(TARGET)
 
+debug:
+	@echo "# Stopping the service"
+	-systemctl --user stop $(SERVICE)
+	@echo ""
+
+	@echo "# Chown root $(OUTPATH)/$(TARGET)"
+	-sudo chown root $(OUTPATH)/$(TARGET)
+	@echo "# Chmod u+s $(OUTPATH)/$(TARGET)"
+	-sudo chmod u+s $(OUTPATH)/$(TARGET)
+	@echo "# Run $(OUTPATH)/$(TARGET)"
+	$(OUTPATH)/$(TARGET)
+
 install:
 	@echo "# Stopping the service"
 	-systemctl --user stop $(SERVICE)
 	@echo ""
-	
+
 	@echo "# Copying application to $(INSTALLPATH)"
 	@echo "# This action requires sudo."
 	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
@@ -59,12 +71,12 @@ install:
 	mkdir -p $(CONFIGPATH)
 	cp -n $(CONFIGFILE) $(CONFIGPATH)
 	@echo ""
-	
+
 	@echo "# Copying service file to $(SERVICEPATH)"
 	mkdir -p $(SERVICEPATH)
 	cp -f $(SERVICEFILE) $(SERVICEPATH)
 	@echo ""
-	
+
 	@echo "# Enabling and starting the service"
 	systemctl --user daemon-reload
 	systemctl --user enable $(SERVICE)
