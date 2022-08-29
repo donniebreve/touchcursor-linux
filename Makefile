@@ -5,13 +5,15 @@ TARGET = touchcursor
 # LIBS = -lm
 CC = gcc
 CFLAGS = -g -Wall
-INSTALLPATH?=/$(HOME)/.local/bin
+# INSTALLPATH ?= $(HOME)/.local/bin
+INSTALLPATH ?= /usr/bin
+# OLDINSTALLPATH ?= /usr/bin/touchcursor
 # Configuration variables
-SERVICEPATH = $(HOME)/.config/systemd/user
-SERVICEFILE = touchcursor.service
-SERVICE := touchcursor.path
-SERVICEPATHFILE = touchcursor.path
-SERVICETARGETPATH = default.taget.wants
+SERVICE-PATH = $(HOME)/.config/systemd/user
+SERVICE-FILE = touchcursor.service
+SERVICE-PATH-WATCHER := touchcursor-watcher.path
+SERVICE-WATCHER-SERVICE := touchcursor-watcher.service
+SERVICE-TARGET-PATH = default.target.wants
 CONFIGPATH = $(HOME)/.config/touchcursor
 CONFIGFILE = touchcursor.conf
 
@@ -46,12 +48,15 @@ clean:
 
 install:
 	@echo "# Stopping the service"
-	-systemctl --user stop $(SERVICE)
+	-systemctl --user stop $(SERVICE-PATH-WATCHER)
+	-systemctl --user stop $(SERVICE-WATCHER-SERVICE)
+	-systemctl --user stop $(SERVICE-FILE)
 	@echo ""
 	
 	@echo "# Copying application to $(INSTALLPATH)"
-	cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
-	chmod u+s $(INSTALLPATH)/$(TARGET)
+	@echo "# This action requires sudo."
+	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
+	sudo chmod u+s $(INSTALLPATH)/$(TARGET)
 	@echo ""
 
 	@echo "# Copying default configuration file to $(CONFIGPATH)/$(CONFIGFILE)"
@@ -59,22 +64,32 @@ install:
 	cp -n $(CONFIGFILE) $(CONFIGPATH)
 	@echo ""
 	
-	@echo "# Copying service files to $(SERVICEPATH)"
-	mkdir -p $(SERVICEPATH)
-	cp -f $(SERVICEFILE) $(SERVICEPATH)
-	cp -f $(SERVICEPATHFILE) $(SERVICEPATH)
+	@echo "# Copying service files to $(SERVICE-PATH)"
+	mkdir -p $(SERVICE-PATH)
+	cp -f $(SERVICE-FILE) $(SERVICE-PATH)
+	cp -f $(SERVICE-PATH-WATCHER) $(SERVICE-PATH)
+	cp -f $(SERVICE-WATCHER-SERVICE) $(SERVICE-PATH)
 	@echo ""
 	
 	@echo "# Enabling and starting the service"
 	systemctl --user daemon-reload
-	systemctl --user preset $(SERVICE)
-	systemctl --user enable $(SERVICE)
-	systemctl --user start $(SERVICE)
+	systemctl --user preset $(SERVICE-FILE)
+	systemctl --user enable $(SERVICE-FILE)
+	systemctl --user start $(SERVICE-FILE)
+	systemctl --user enable $(SERVICE-PATH-WATCHER)
+	systemctl --user start $(SERVICE-PATH-WATCHER)
+	# systemctl --user enable $(SERVICE-WATCHER-SERVICE)
+	# systemctl --user start $(SERVICE-WATCHER-SERVICE)
 
 uninstall:
 	@echo "# Stopping and disabling the service"
-	-systemctl --user stop $(SERVICE)
-	-systemctl --user disable $(SERVICE)
+	-systemctl --user stop $(SERVICE-FILE)
+	-systemctl --user disable $(SERVICE-FILE)
+	-systemctl --user stop $(SERVICE-PATH-WATCHER)
+	-systemctl --user disable $(SERVICE-PATH-WATCHER)
+	-systemctl --user stop $(SERVICE-WATCHER-SERVICE)
+	-systemctl --user disable $(SERVICE-WATCHER-SERVICE)
+	-systemctl --user daemon-reload
 	@echo ""
 
 	@echo "# Removing configuration file $(CONFIGPATH)/$(CONFIGFILE)"
@@ -82,13 +97,16 @@ uninstall:
 	-rm -r $(CONFIGPATH)
 	@echo ""
 
-	@echo "# Removing service file from $(SERVICEPATH)"
-	-rm $(SERVICEPATH)/$(SERVICEFILE)
-	-rm $(SERVICEPATH)/$(SERVICEPATHFILE)
-	-rm $(SERVICEPATH)/$(SERVICETARGETPATH)/$(SERVICEPATHFILE)
-	-rm -d $(SERVICEPATH)
+	@echo "# Removing service files from $(SERVICE-PATH)"
+	-rm $(SERVICE-PATH)/$(SERVICE-FILE)
+	-rm $(SERVICE-PATH)/$(SERVICE-PATH-WATCHER)
+	-rm $(SERVICE-PATH)/$(SERVICE-WATCHER-SERVICE)
+	-rm $(SERVICE-PATH)/$(SERVICE-TARGET-PATH)/$(SERVICE-PATH-WATCHER)
+	-rm -d $(SERVICE-PATH)/$(SERVICE-TARGET-PATH)
+	-rm -d $(SERVICE-PATH)
 	@echo ""
 
 	@echo "# Removing application from $(INSTALLPATH)"
-	-rm $(INSTALLPATH)/$(TARGET)
+	@echo "# This action requires sudo."
+	-sudo rm $(INSTALLPATH)/$(TARGET)
 	@echo ""

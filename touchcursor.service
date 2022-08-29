@@ -1,5 +1,9 @@
 [Unit]
 Description=Touch Cursor Service
+StartLimitIntervalSec=0
 
 [Service]
-ExecStart=%h/.local/bin/touchcursor
+ExecStart=/usr/bin/touchcursor
+
+[Install]
+WantedBy=default.target

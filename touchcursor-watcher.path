@@ -3,6 +3,7 @@ Description=Touchcursor Path Monitor
 StartLimitIntervalSec=0
 
 [Path]
+Unit=touchcursor-watcher.service
 PathChanged=/dev/input
 
 [Install]

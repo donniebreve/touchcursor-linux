@@ -1,0 +1,10 @@
+[Unit]
+Description=Touchcursor Service Restarter
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl --user restart touchcursor.service
+
+[Install]
+WantedBy=default.target
