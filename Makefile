@@ -11,9 +11,7 @@ INSTALLPATH ?= /usr/bin
 # Configuration variables
 SERVICE-PATH = $(HOME)/.config/systemd/user
 SERVICE-FILE = touchcursor.service
-SERVICE-PATH-WATCHER := touchcursor-watcher.path
-SERVICE-WATCHER-SERVICE := touchcursor-watcher.service
-SERVICE-TARGET-PATH = default.target.wants
+SERVICE-PATH-WATCHER := touchcursor.path
 CONFIGPATH = $(HOME)/.config/touchcursor
 CONFIGFILE = touchcursor.conf
 
@@ -49,8 +47,6 @@ clean:
 install:
 	@echo "# Stopping the service"
 	-systemctl --user stop $(SERVICE-PATH-WATCHER)
-	-systemctl --user stop $(SERVICE-WATCHER-SERVICE)
-	-systemctl --user stop $(SERVICE-FILE)
 	@echo ""
 	
 	@echo "# Copying application to $(INSTALLPATH)"
@@ -68,27 +64,15 @@ install:
 	mkdir -p $(SERVICE-PATH)
 	cp -f $(SERVICE-FILE) $(SERVICE-PATH)
 	cp -f $(SERVICE-PATH-WATCHER) $(SERVICE-PATH)
-	cp -f $(SERVICE-WATCHER-SERVICE) $(SERVICE-PATH)
 	@echo ""
 	
 	@echo "# Enabling and starting the service"
 	systemctl --user daemon-reload
-	systemctl --user preset $(SERVICE-FILE)
-	systemctl --user enable $(SERVICE-FILE)
-	systemctl --user start $(SERVICE-FILE)
-	systemctl --user enable $(SERVICE-PATH-WATCHER)
-	systemctl --user start $(SERVICE-PATH-WATCHER)
-	# systemctl --user enable $(SERVICE-WATCHER-SERVICE)
-	# systemctl --user start $(SERVICE-WATCHER-SERVICE)
+	systemctl --user enable --now $(SERVICE-PATH-WATCHER)
 
 uninstall:
 	@echo "# Stopping and disabling the service"
-	-systemctl --user stop $(SERVICE-FILE)
-	-systemctl --user disable $(SERVICE-FILE)
-	-systemctl --user stop $(SERVICE-PATH-WATCHER)
-	-systemctl --user disable $(SERVICE-PATH-WATCHER)
-	-systemctl --user stop $(SERVICE-WATCHER-SERVICE)
-	-systemctl --user disable $(SERVICE-WATCHER-SERVICE)
+	-systemctl --user disable --now $(SERVICE-PATH-WATCHER)
 	-systemctl --user daemon-reload
 	@echo ""
 
@@ -100,9 +84,6 @@ uninstall:
 	@echo "# Removing service files from $(SERVICE-PATH)"
 	-rm $(SERVICE-PATH)/$(SERVICE-FILE)
 	-rm $(SERVICE-PATH)/$(SERVICE-PATH-WATCHER)
-	-rm $(SERVICE-PATH)/$(SERVICE-WATCHER-SERVICE)
-	-rm $(SERVICE-PATH)/$(SERVICE-TARGET-PATH)/$(SERVICE-PATH-WATCHER)
-	-rm -d $(SERVICE-PATH)/$(SERVICE-TARGET-PATH)
 	-rm -d $(SERVICE-PATH)
 	@echo ""
 
