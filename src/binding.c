@@ -19,7 +19,7 @@ int output = -1;
 /**
  * Binds to the input device using ioctl.
  * */
-int bindInput(char* eventPath)
+int bind_input(char* eventPath)
 {
     // Open the keyboard device
     fprintf(stdout, "info: attempting to capture: '%s'\n", eventPath);
@@ -57,9 +57,19 @@ int bindInput(char* eventPath)
 }
 
 /**
+ * Releases the input device.
+ * */
+int release_input(char* eventPath)
+{
+    ioctl(input, EVIOCGRAB, 0);
+    close(input);
+    return EXIT_SUCCESS;
+}
+
+/**
  * Creates and binds a virtual output device using ioctl and uinput.
  * */
-int bindOutput()
+int bind_output()
 {
     // Define the virtual keyboard
     struct uinput_setup virtualKeyboard;
@@ -83,7 +93,7 @@ int bindOutput()
         return EXIT_FAILURE;
     }
     // Enable the set of KEY events
-    for (int i = 0; i <= MAX_KEYS_TO_ENABLE_KEY_EVENTS_HANDLING_FOR; i++)
+    for (int i = 0; i <= MAX_KEYBIT; i++)
     {
         int result = ioctl(output, UI_SET_KEYBIT, i);
         if (result < 0)
@@ -105,5 +115,15 @@ int bindOutput()
         return EXIT_FAILURE;
     }
     fprintf(stdout, "info: successfully created virtual output device\n");
+    return EXIT_SUCCESS;
+}
+
+/**
+ * Releases the virtual output device.
+ * */
+int release_output()
+{
+    ioctl(output, UI_DEV_DESTROY);
+    close(output);
     return EXIT_SUCCESS;
 }
