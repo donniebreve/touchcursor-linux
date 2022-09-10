@@ -7,8 +7,8 @@
 #include "config.h"
 #include "keys.h"
 
-char configFilePath[256];
-char eventPath[18];
+char configuration_file_path[256];
+char event_path[18];
 
 int hyperKey;
 int keymap[256];
@@ -16,12 +16,12 @@ int keymap[256];
 int remap[256];
 
 /**
- * @brief Trim comment from the end of the string started by '#' character.
+ * Trims trailing comments from a string.
  *
- * @param s String to be trimmed.
- * @return char* Trimmed string without any comments.
+ * @param s The string to be trimmed.
+ * @return char* The string without any trailing comments.
  * */
-char* trimComment(char* s)
+char* trim_comment(char* s)
 {
     if (s != NULL)
     {
@@ -37,9 +37,12 @@ char* trimComment(char* s)
 
 /**
  * Trims a string.
- * credit to chux: https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way#122721
+ *
+ * @param s The string to be trimmed.
+ * @remarks
+ * Credit to chux: https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way#122721
  * */
-char* trimString(char* s)
+static char* trim_string(char* s)
 {
     while (isspace((unsigned char)*s)) s++;
     if (*s)
@@ -53,112 +56,113 @@ char* trimString(char* s)
 }
 
 /**
- * Checks if the string starts with a specific value.
+ * Checks if a string starts with a specific substring.
+ *
+ * @param s The string to be inspected.
+ * @param ss The substring to search for.
  */
-int startsWith(const char* str, const char* value)
+static int starts_with(const char* s, const char* ss)
 {
-    return strncmp(str, value, strlen(value)) == 0;
-}
-
-/**
- * Checks for the device number if it is configured.
- */
-int getDeviceNumber(char* deviceConfigValue)
-{
-    int deviceNumber = 1;
-    int length = strlen(deviceConfigValue);
-    for (int i = length - 1; i >= 0; i--)
-    {
-        if (deviceConfigValue[i] == '\0') break;
-        if (deviceConfigValue[i] == '"') break;
-        if (deviceConfigValue[i] == ':')
-        {
-            deviceNumber = atoi(deviceConfigValue + i + 1);
-            deviceConfigValue[i] = '\0';
-        }
-    }
-    return deviceNumber;
+    return strncmp(s, ss, strlen(ss)) == 0;
 }
 
 /**
  * Checks for commented or empty lines.
+ *
+ * @param line The configuration file line.
  */
-int isCommentOrEmpty(char* line)
+static int is_comment_or_empty(char* line)
 {
     return line[0] == '#' || line[0] == '\0';
+}
+
+
+/**
+ * Checks for the device number if it is configured.
+ * Also removes the trailing number configuration from the input.
+ */
+static int get_device_number(char* device_config_value)
+{
+    int device_number = 1;
+    int length = strlen(device_config_value);
+    for (int i = length - 1; i >= 0; i--)
+    {
+        if (device_config_value[i] == '\0') break;
+        if (device_config_value[i] == '"') break;
+        if (device_config_value[i] == ':')
+        {
+            device_number = atoi(device_config_value + i + 1);
+            device_config_value[i] = '\0';
+        }
+    }
+    return device_number;
 }
 
 /**
  * Searches /proc/bus/input/devices for the device event.
  */
-void findDeviceEvent(char* deviceConfigValue)
+static int find_device_event(char* device_config_value)
 {
-    eventPath[0] = '\0';
-
-    char* deviceName = deviceConfigValue;
-    int deviceNumber = getDeviceNumber(deviceName);
-
-    fprintf(stdout, "info: deviceName: %s\n", deviceName);
-    fprintf(stdout, "info: deviceNumber: %i\n", deviceNumber);
-
-    char* devicesFilePath = "/proc/bus/input/devices";
-    FILE* devicesFile = fopen(devicesFilePath, "r");
-    if (!devicesFile)
+    event_path[0] = '\0';
+    char* device_name = device_config_value;
+    int device_number = get_device_number(device_name);
+    fprintf(stdout, "info: configured device_name: %s\n", device_name);
+    fprintf(stdout, "info: configured device_number: %i\n", device_number);
+    FILE* devices_file = fopen("/proc/bus/input/devices", "r");
+    if (!devices_file)
     {
         fprintf(stderr, "error: could not open /proc/bus/input/devices\n");
-        return;
+        return EXIT_FAILURE;
     }
-
     char* line = NULL;
-    int matchedName = 0;
-    int matchedCount = 0;
-    int foundEvent = 0;
+    int matched_name = 0;
+    int matched_count = 0;
+    int found_event = 0;
     size_t length = 0;
     ssize_t result;
-    while (!foundEvent && (result = getline(&line, &length, devicesFile)) != -1)
+    while (!found_event && (result = getline(&line, &length, devices_file)) != -1)
     {
         if (length < 3) continue;
         if (isspace(line[0])) continue;
-        if (!matchedName)
+        if (!matched_name)
         {
-            if (!startsWith(line, "N: ")) continue;
-            char* trimmedLine = trimString(line + 3);
-            if (strcmp(trimmedLine, deviceName) == 0)
+            if (!starts_with(line, "N: ")) continue;
+            char* trimmed_line = trim_string(line + 3);
+            if (strcmp(trimmed_line, device_name) == 0)
             {
-                if (deviceNumber == ++matchedCount)
+                if (device_number == ++matched_count)
                 {
-                    matchedName = 1;
+                    matched_name = 1;
                 }
                 continue;
             }
         }
-        if (matchedName)
+        if (matched_name)
         {
-            if (!startsWith(line, "H: Handlers")) continue;
+            if (!starts_with(line, "H: Handlers")) continue;
             char* tokens = line;
             char* token = strsep(&tokens, "=");
             while (tokens != NULL)
             {
                 token = strsep(&tokens, " ");
-                if (startsWith(token, "event"))
+                if (starts_with(token, "event"))
                 {
-                    strcat(eventPath, "/dev/input/");
-                    strcat(eventPath, token);
-                    fprintf(stdout, "info: found the keyboard event\n");
-                    foundEvent = 1;
+                    strcat(event_path, "/dev/input/");
+                    strcat(event_path, token);
+                    fprintf(stdout, "info: found the keyboard event: %s\n", event_path);
+                    found_event = 1;
                     break;
                 }
             }
         }
     }
-
-    if (!foundEvent)
+    if (!found_event)
     {
-        fprintf(stderr, "error: could not find device: %s\n", deviceConfigValue);
+        fprintf(stderr, "error: could not find the event path for device: %s\n", device_config_value);
     }
-
-    fclose(devicesFile);
+    fclose(devices_file);
     if (line) free(line);
+    return EXIT_SUCCESS;
 }
 
 static enum sections
@@ -173,45 +177,45 @@ static enum sections
 /**
  * Reads the configuration file.
  * */
-void readConfiguration()
+int read_configuration()
 {
     // Find the configuration file
-    configFilePath[0] = '\0';
-    FILE* configFile;
-    char* homePath = getenv("HOME");
-    if (!homePath)
+    configuration_file_path[0] = '\0';
+    FILE* configuration_file;
+    char* home_path = getenv("HOME");
+    if (!home_path)
     {
         fprintf(stderr, "error: home path environment variable not specified\n");
     }
-    if (homePath)
+    if (home_path)
     {
-        strcat(configFilePath, homePath);
-        strcat(configFilePath, "/.config/touchcursor/touchcursor.conf");
-        fprintf(stdout, "info: looking for the configuration file at: %s\n", configFilePath);
-        configFile = fopen(configFilePath, "r");
+        strcat(configuration_file_path, home_path);
+        strcat(configuration_file_path, "/.config/touchcursor/touchcursor.conf");
+        fprintf(stdout, "info: looking for the configuration file at: %s\n", configuration_file_path);
+        configuration_file = fopen(configuration_file_path, "r");
     }
-    if (!configFile)
+    if (!configuration_file)
     {
-        strcpy(configFilePath, "/etc/touchcursor/touchcursor.conf");
-        fprintf(stdout, "info: looking for the configuration file at: %s\n", configFilePath);
-        configFile = fopen(configFilePath, "r");
+        strcpy(configuration_file_path, "/etc/touchcursor/touchcursor.conf");
+        fprintf(stdout, "info: looking for the configuration file at: %s\n", configuration_file_path);
+        configuration_file = fopen(configuration_file_path, "r");
     }
-    if (!configFile)
+    if (!configuration_file)
     {
         fprintf(stderr, "error: could not open the configuration file\n");
-        return;
+        return EXIT_FAILURE;
     }
-    fprintf(stdout, "info: found the configuration file\n");
+    fprintf(stdout, "info: found the configuration file: %s\n", configuration_file_path);
     // Parse the configuration file
     char* buffer = NULL;
     size_t length = 0;
     ssize_t result = -1;
-    while ((result = getline(&buffer, &length, configFile)) != -1)
+    while ((result = getline(&buffer, &length, configuration_file)) != -1)
     {
-        char* line = trimComment(buffer);
-        line = trimString(line);
+        char* line = trim_comment(buffer);
+        line = trim_string(line);
         // Comment or empty line
-        if (isCommentOrEmpty(line))
+        if (is_comment_or_empty(line))
         {
             continue;
         }
@@ -241,9 +245,9 @@ void readConfiguration()
         {
             case configuration_device:
                 {
-                    if (eventPath[0] == '\0')
+                    if (event_path[0] == '\0')
                     {
-                        findDeviceEvent(line);
+                        find_device_event(line);
                     }
                     continue;
                 }
@@ -283,11 +287,12 @@ void readConfiguration()
                 }
         }
     }
-    fclose(configFile);
+    fclose(configuration_file);
     if (buffer)
     {
         free(buffer);
     }
+    return EXIT_SUCCESS;
 }
 
 /**

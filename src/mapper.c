@@ -39,14 +39,6 @@ static int getMapped(int code)
 }
 
 /**
- * Checks if the key has been permanently mapped.
- * */
-static int isRemapped(int code)
-{
-    return remap[code] != 0;
-}
-
-/**
  * Converts the input code to the remapped code.
  * */
 static int getRemapped(int code)

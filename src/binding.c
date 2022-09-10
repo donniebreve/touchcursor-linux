@@ -11,33 +11,34 @@
 #include "binding.h"
 
 // The input device
+static char input_device_name[256] = "Unknown";
 int input = -1;
 
 // The output device
+static char output_device_sys_path[256] = "\0";
 int output = -1;
 
 /**
  * Binds to the input device using ioctl.
  * */
-int bind_input(char* eventPath)
+int bind_input(char* event_path)
 {
     // Open the keyboard device
-    fprintf(stdout, "info: attempting to capture: '%s'\n", eventPath);
-    input = open(eventPath, O_RDONLY);
+    fprintf(stdout, "info: attempting to capture: %s\n", event_path);
+    input = open(event_path, O_RDONLY);
     if (input < 0)
     {
         fprintf(stderr, "error: failed to open the input device: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
     // Retrieve the device name
-    char keyboardName[256] = "Unknown";
-    if (ioctl(input, EVIOCGNAME(sizeof(keyboardName) - 1), keyboardName) < 0)
+    if (ioctl(input, EVIOCGNAME(sizeof(input_device_name)), input_device_name) < 0)
     {
         fprintf(stderr, "error: failed to get the device name (EVIOCGNAME: %s)\n", strerror(errno));
         return EXIT_FAILURE;
     }
     // Check that the device is not our virtual device
-    if (strcasestr(keyboardName, "Virtual TouchCursor Keyboard") != NULL)
+    if (strcasestr(input_device_name, "Virtual TouchCursor Keyboard") != NULL)
     {
         fprintf(stdout, "error: you cannot capture the virtual device: %s\n", strerror(errno));
         return EXIT_FAILURE;
@@ -52,15 +53,16 @@ int bind_input(char* eventPath)
         fprintf(stdout, "error: failed to capture the device (EVIOCGRAB: %s)\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    fprintf(stdout, "info: successfully captured device %s\n", keyboardName);
+    fprintf(stdout, "info: successfully captured device %s (%s)\n", input_device_name, event_path);
     return EXIT_SUCCESS;
 }
 
 /**
  * Releases the input device.
  * */
-int release_input(char* eventPath)
+int release_input(char* event_path)
 {
+    fprintf(stdout, "info: releasing: %s (%s)\n", input_device_name, event_path);
     ioctl(input, EVIOCGRAB, 0);
     close(input);
     return EXIT_SUCCESS;
@@ -114,7 +116,16 @@ int bind_output()
         fprintf(stdout, "error: failed to create the virtual device (UI_DEV_CREATE: %s)\n", strerror(errno));
         return EXIT_FAILURE;
     }
-    fprintf(stdout, "info: successfully created virtual output device\n");
+    // Get the device path
+    char sysname[16];
+    if (ioctl(output, UI_GET_SYSNAME(sizeof(sysname)), sysname) < 0)
+    {
+        fprintf(stderr, "error: failed to get the sysfs name (UI_GET_SYSNAME: %s)\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+    strcat(output_device_sys_path, "/sys/devices/virtual/input/");
+    strcat(output_device_sys_path, sysname);
+    fprintf(stdout, "info: successfully created output Virtual TouchCursor Keyboard (%s)\n", output_device_sys_path);
     return EXIT_SUCCESS;
 }
 
@@ -123,6 +134,7 @@ int bind_output()
  * */
 int release_output()
 {
+    fprintf(stdout, "info: releasing: Virtual TouchCursor Keyboard (%s)\n", output_device_sys_path);
     ioctl(output, UI_DEV_DESTROY);
     close(output);
     return EXIT_SUCCESS;
