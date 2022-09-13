@@ -4,78 +4,15 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "config.h"
+#include "binding.h"
 #include "keys.h"
+#include "strings.h"
+#include "config.h"
 
 char configuration_file_path[256];
-char event_path[18];
-
 int hyperKey;
 int keymap[256];
-
 int remap[256];
-
-/**
- * Trims trailing comments from a string.
- *
- * @param s The string to be trimmed.
- * @return char* The string without any trailing comments.
- * */
-char* trim_comment(char* s)
-{
-    if (s != NULL)
-    {
-        char *p  = strchr(s, '#');
-        if (p != NULL)
-        {
-            // p points to the start of the comment.
-            *p = '\0';
-        }
-    }
-    return s;
-}
-
-/**
- * Trims a string.
- *
- * @param s The string to be trimmed.
- * @remarks
- * Credit to chux: https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way#122721
- * */
-static char* trim_string(char* s)
-{
-    while (isspace((unsigned char)*s)) s++;
-    if (*s)
-    {
-        char *p = s;
-        while (*p) p++;
-        while (isspace((unsigned char) *(--p)));
-        p[1] = '\0';
-    }
-    return s;
-}
-
-/**
- * Checks if a string starts with a specific substring.
- *
- * @param s The string to be inspected.
- * @param ss The substring to search for.
- */
-static int starts_with(const char* s, const char* ss)
-{
-    return strncmp(s, ss, strlen(ss)) == 0;
-}
-
-/**
- * Checks for commented or empty lines.
- *
- * @param line The configuration file line.
- */
-static int is_comment_or_empty(char* line)
-{
-    return line[0] == '#' || line[0] == '\0';
-}
-
 
 /**
  * Checks for the device number if it is configured.
@@ -96,73 +33,6 @@ static int get_device_number(char* device_config_value)
         }
     }
     return device_number;
-}
-
-/**
- * Searches /proc/bus/input/devices for the device event.
- */
-static int find_device_event(char* device_config_value)
-{
-    event_path[0] = '\0';
-    char* device_name = device_config_value;
-    int device_number = get_device_number(device_name);
-    fprintf(stdout, "info: configured device_name: %s\n", device_name);
-    fprintf(stdout, "info: configured device_number: %i\n", device_number);
-    FILE* devices_file = fopen("/proc/bus/input/devices", "r");
-    if (!devices_file)
-    {
-        fprintf(stderr, "error: could not open /proc/bus/input/devices\n");
-        return EXIT_FAILURE;
-    }
-    char* line = NULL;
-    int matched_name = 0;
-    int matched_count = 0;
-    int found_event = 0;
-    size_t length = 0;
-    ssize_t result;
-    while (!found_event && (result = getline(&line, &length, devices_file)) != -1)
-    {
-        if (length < 3) continue;
-        if (isspace(line[0])) continue;
-        if (!matched_name)
-        {
-            if (!starts_with(line, "N: ")) continue;
-            char* trimmed_line = trim_string(line + 3);
-            if (strcmp(trimmed_line, device_name) == 0)
-            {
-                if (device_number == ++matched_count)
-                {
-                    matched_name = 1;
-                }
-                continue;
-            }
-        }
-        if (matched_name)
-        {
-            if (!starts_with(line, "H: Handlers")) continue;
-            char* tokens = line;
-            char* token = strsep(&tokens, "=");
-            while (tokens != NULL)
-            {
-                token = strsep(&tokens, " ");
-                if (starts_with(token, "event"))
-                {
-                    strcat(event_path, "/dev/input/");
-                    strcat(event_path, token);
-                    fprintf(stdout, "info: found the keyboard event: %s\n", event_path);
-                    found_event = 1;
-                    break;
-                }
-            }
-        }
-    }
-    if (!found_event)
-    {
-        fprintf(stderr, "error: could not find the event path for device: %s\n", device_config_value);
-    }
-    fclose(devices_file);
-    if (line) free(line);
-    return EXIT_SUCCESS;
 }
 
 static enum sections
@@ -245,9 +115,11 @@ int read_configuration()
         {
             case configuration_device:
                 {
-                    if (event_path[0] == '\0')
+                    if (input_event_path[0] == '\0')
                     {
-                        find_device_event(line);
+                        char* name = line;
+                        int number = get_device_number(name);
+                        find_device_event_path(name, number);
                     }
                     continue;
                 }

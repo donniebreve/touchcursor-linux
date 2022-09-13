@@ -60,7 +60,7 @@ static int attach_signal_handlers()
 
 static void clean_up()
 {
-    release_input(event_path);
+    release_input();
     release_output();
 }
 
@@ -68,10 +68,10 @@ static void clean_up()
 * Main method.
 *
 * @remarks
-*   read: Read NBYTES into BUF from FD. Return the number read, -1 for errors or 0 for EOF.
-*   EOF doesn't make sense here. Partial events will be ignored.
-*   https://docs.kernel.org/input/uinput.html
-*   https://stackoverflow.com/questions/20943322/accessing-keys-from-linux-input-device
+* read: Read NBYTES into BUF from FD. Return the number read, -1 for errors or 0 for EOF.
+* EOF doesn't make sense here. Partial events will be ignored.
+* https://docs.kernel.org/input/uinput.html
+* https://stackoverflow.com/questions/20943322/accessing-keys-from-linux-input-device
 * */
 int main(int argc, char* argv[])
 {
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     // Bind the input device
-    if (bind_input(event_path) != EXIT_SUCCESS)
+    if (bind_input() != EXIT_SUCCESS)
     {
         fprintf(stderr, "error: could not capture the keyboard device\n");
         return EXIT_FAILURE;
@@ -105,13 +105,13 @@ int main(int argc, char* argv[])
         if (should_reload)
         {
             fprintf(stdout, "info: reloading\n");
-            release_input(event_path);
+            release_input();
             if (read_configuration() != EXIT_SUCCESS)
             {
                 fprintf(stderr, "error: failed to read the configuration\n");
                 return EXIT_FAILURE;
             }
-            if (bind_input(event_path) != EXIT_SUCCESS)
+            if (bind_input() != EXIT_SUCCESS)
             {
                 fprintf(stderr, "error: could not capture the keyboard device\n");
                 return EXIT_FAILURE;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
             clean_up();
             return EXIT_SUCCESS;
         }
-        result = read(input, &event, sizeof(event));
+        result = read(input_file_descriptor, &event, sizeof(event));
         if (result == (ssize_t)-1)
         {
             if (errno == EINTR)
