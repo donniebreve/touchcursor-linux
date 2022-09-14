@@ -2,10 +2,6 @@
 Description=Touchcursor Path Monitor
 StartLimitBurst=0
 PropagatesStopTo=touchcursor.service
-PropagatesReloadTo=touchcursor.service
-# Every time a hit to the given path is triggered, the service is reloaded
-# "[...]monitored paths are checked immediately again, and the service accordingly restarted instantly"
-# https://www.freedesktop.org/software/systemd/man/systemd.path.html#Description
 
 [Path]
 Unit=touchcursor.service

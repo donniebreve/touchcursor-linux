@@ -1,7 +1,10 @@
 [Unit]
-Description=Touch Cursor Service
+Description=Touchcursor Service
 StartLimitIntervalSec=0
 PartOf=touchcursor.path
 
 [Service]
+ExecStartPre=/usr/bin/systemctl --user --no-block reload touchcursor.service
+ExecStartPre=sleep 1
 ExecStart=/usr/bin/touchcursor
+ExecReload=kill -HUP $MAINPID
