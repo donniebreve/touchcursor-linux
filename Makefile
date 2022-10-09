@@ -1,104 +1,119 @@
-SRCPATH = ./src
-OBJPATH = ./obj
-OUTPATH = ./out
-TARGET = touchcursor
+# Overridable variables
+INSTALLPATH ?= /usr/bin
+SERVICEPATH ?= $(HOME)/.config/systemd/user
+CONFIGPATH ?= $(HOME)/.config/touchcursor
+
+# Application variables
+service = touchcursor.service
+config = touchcursor.conf
+
+# Build variables
+src_path = ./src
+obj_path = ./obj
+out_path = ./out
+binary = touchcursor
 # LIBS = -lm
-CC = gcc
-CFLAGS = -g -Wall
-INSTALLPATH?=/usr/bin
-# Configuration variables
-SERVICEPATH = $(HOME)/.config/systemd/user
-SERVICEFILE = touchcursor.service
-SERVICE := touchcursor.service
-CONFIGPATH = $(HOME)/.config/touchcursor
-CONFIGFILE = touchcursor.conf
-INPUTFILE = $(shell find /dev/input/event* | head -n 1)
-INPUTGROUP = $(shell stat -c '%G' $(INPUTFILE))
+cc = gcc
+cflags = -g -Wall
+# All .h files
+headers = $(wildcard $(src_path)/*.h)
+# All .c files, excluding test.c
+sources = $(filter-out $(src_path)/test.c, $(wildcard $(src_path)/*.c))
+# Replace .c files with obj/filename.o from sources
+objects = $(patsubst $(src_path)/%.c, $(obj_path)/%.o, $(sources))
 
-.PHONY: default all clean
-
-default: $(OUTPATH)/$(TARGET)
-all: default
-
-# All c files, excluding test.c
-SOURCES = $(filter-out $(SRCPATH)/test.c, $(wildcard $(SRCPATH)/*.c))
-# All h files
-HEADERS = $(wildcard $(SRCPATH)/*.h)
-# Replace c files with obj/filename.o from sources
-OBJECTS = $(patsubst $(SRCPATH)/%.c, $(OBJPATH)/%.o, $(SOURCES))
-
-.PRECIOUS: $(TARGET) $(OBJECTS)
+# The binary depends on all .o files
+# This is the main target of the make file
+$(out_path)/$(binary): $(objects)
+	@mkdir -p $(out_path)
+	$(cc) $(objects) -Wall -o $@
 
 # Each .o file depends on its .c file and .h file (we include all headers)
-$(OBJPATH)/%.o: $(SRCPATH)/%.c $(HEADERS)
-	@mkdir -p $(OBJPATH)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# The target depends on all the .o files
-$(OUTPATH)/$(TARGET): $(OBJECTS)
-	@mkdir -p $(OUTPATH)
-	$(CC) $(OBJECTS) -Wall -o $@
-
+$(obj_path)/%.o: $(src_path)/%.c $(headers)
+	@mkdir -p $(obj_path)
+	$(cc) $(cflags) -c $< -o $@
 
 clean:
 	-rm -f obj/*.o
-	-rm -f $(OUTPATH)/$(TARGET)
+	-rm -f $(out_path)/$(binary)
 
 debug:
 	@echo "# Stopping the service"
-	-systemctl --user stop $(SERVICE)
+	-systemctl --user stop $(service)
 	@echo ""
 
-	@echo "# Chown root $(OUTPATH)/$(TARGET)"
-	-sudo chown root $(OUTPATH)/$(TARGET)
-	@echo "# Chmod u+s $(OUTPATH)/$(TARGET)"
-	-sudo chmod u+s $(OUTPATH)/$(TARGET)
-	@echo "# Run $(OUTPATH)/$(TARGET)"
-	$(OUTPATH)/$(TARGET)
+	@echo "# Chown root $(out_path)/$(binary)"
+	sudo chown root $(out_path)/$(binary)
+	@echo "# Chmod u+s $(out_path)/$(binary)"
+	sudo chmod u+s $(out_path)/$(binary)
+	@echo "# Run $(out_path)/$(binary)"
+	$(out_path)/$(binary)
 
 install:
-	@echo "# Stopping the service"
-	-systemctl --user stop $(SERVICE)
+	@echo "# Stopping and disabling the service"
+	-systemctl --user disable --now $(service)
 	@echo ""
 
 	@echo "# Copying application to $(INSTALLPATH)"
 	@echo "# This action requires sudo."
-	sudo cp $(OUTPATH)/$(TARGET) $(INSTALLPATH)
-	sudo chmod u+s $(INSTALLPATH)/$(TARGET)
-	@echo ""
-
-	@echo "# Copying default configuration file to $(CONFIGPATH)/$(CONFIGFILE)"
-	mkdir -p $(CONFIGPATH)
-	cp -n $(CONFIGFILE) $(CONFIGPATH)
+	sudo cp $(out_path)/$(binary) $(INSTALLPATH)
+	sudo chmod u+s $(INSTALLPATH)/$(binary)
 	@echo ""
 
 	@echo "# Copying service file to $(SERVICEPATH)"
 	mkdir -p $(SERVICEPATH)
-	cp -f $(SERVICEFILE) $(SERVICEPATH)
+	cp -f $(service) $(SERVICEPATH)
+	@echo ""
+
+	@echo "# Copying default configuration file to $(CONFIGPATH)/$(config)"
+	mkdir -p $(CONFIGPATH)
+	cp -n $(config) $(CONFIGPATH)
 	@echo ""
 
 	@echo "# Enabling and starting the service"
 	systemctl --user daemon-reload
-	systemctl --user enable $(SERVICE)
-	systemctl --user start $(SERVICE)
+	systemctl --user enable --now $(service)
 
 uninstall:
-	@echo "# Stopping and disabling the service"
-	-systemctl --user stop $(SERVICE)
-	-systemctl --user disable $(SERVICE)
+	@echo "# The configuration file will not be removed:"
+	@echo "# $(CONFIGPATH)/$(config)"
+	@echo ""
+	@echo "# To uninstall everything (including the configuration file)"
+	@echo "# run 'make uninstall-full'"
 	@echo ""
 
-	@echo "# Removing configuration file $(CONFIGPATH)/$(CONFIGFILE)"
-	-rm $(CONFIGPATH)/$(CONFIGFILE)
-	-rm -r $(CONFIGPATH)
+	@echo "# Stopping and disabling the service"
+	-systemctl --user disable --now $(service)
+	systemctl --user daemon-reload
 	@echo ""
 
 	@echo "# Removing service file from $(SERVICEPATH)"
-	-rm $(SERVICEPATH)/$(SERVICEFILE)
+	-rm $(SERVICEPATH)/$(service)
 	-rm -d $(SERVICEPATH)
 	@echo ""
 
 	@echo "# Removing application from $(INSTALLPATH)"
 	@echo "# This action requires sudo."
-	-sudo rm $(INSTALLPATH)/$(TARGET)
+	-sudo rm $(INSTALLPATH)/$(binary)
+	@echo ""
+
+uninstall-full:
+	@echo "# Stopping and disabling the service"
+	-systemctl --user disable --now $(service)
+	systemctl --user daemon-reload
+	@echo ""
+
+	@echo "# Removing service file from $(SERVICEPATH)"
+	-rm $(SERVICEPATH)/$(service)
+	-rm -d $(SERVICEPATH)
+	@echo ""
+
+	@echo "# Removing application from $(INSTALLPATH)"
+	@echo "# This action requires sudo."
+	-sudo rm $(INSTALLPATH)/$(binary)
+	@echo ""
+
+	@echo "# Removing configuration file $(CONFIGPATH)/$(config)"
+	-rm $(CONFIGPATH)/$(config)
+	-rm -d $(CONFIGPATH)
 	@echo ""
