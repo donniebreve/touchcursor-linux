@@ -2,12 +2,12 @@
 #define config_h
 
 /**
- * The event path for the device.
+ * The configuration file path.
  * */
-extern char eventPath[18];
+extern char configuration_file_path[256];
 
 /**
- * The hyper key;
+ * The hyper key.
  * */
 extern int hyperKey;
 
@@ -24,6 +24,6 @@ extern int remap[256];
 /**
  * Reads the configuration file.
  * */
-void readConfiguration();
+int read_configuration();
 
 #endif
