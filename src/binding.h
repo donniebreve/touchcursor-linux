@@ -20,7 +20,7 @@ extern char input_device_name[256];
 /**
  * The event path for the input device.
  * */
-extern char input_event_path[32];
+extern char input_event_path[256];
 /**
  * The file descriptor for the input device.
  * */
@@ -51,7 +51,11 @@ extern char output_device_name[32];
 /**
  * The sys path for the output device.
  * */
-extern char output_sys_path[32];
+extern char output_sys_path[256];
+/**
+ * The output device key state.
+ * */
+extern int output_device_keystate[MAX_KEYBIT];
 /**
  * The file descriptor for the output device.
  * */
@@ -61,6 +65,11 @@ extern int output_file_descriptor;
  * Creates and binds a virtual output device using ioctl and uinput.
  * */
 int bind_output();
+
+/**
+ * Releases any held keys on the output device.
+ * */
+void release_output_keys();
 
 /**
  * Releases the virtual output device.

@@ -11,15 +11,17 @@
 
 #include "strings.h"
 #include "binding.h"
+#include "emit.h"
 
 // The input device
 char input_device_name[256] = "Unknown";
-char input_event_path[32] = "\0";
+char input_event_path[256] = "\0";
 int input_file_descriptor = -1;
 
 // The output device
 char output_device_name[32] = "Virtual TouchCursor Keyboard";
-char output_sys_path[32] = "\0";
+char output_sys_path[256] = "\0";
+int output_device_keystate[MAX_KEYBIT];
 int output_file_descriptor = -1;
 
 /**
@@ -134,9 +136,12 @@ int bind_input()
  * */
 int release_input()
 {
-    fprintf(stdout, "info: releasing: %s (%s)\n", input_device_name, input_event_path);
-    ioctl(input_file_descriptor, EVIOCGRAB, 0);
-    close(input_file_descriptor);
+    if (input_file_descriptor > 0)
+    {
+        fprintf(stdout, "info: releasing: %s (%s)\n", input_device_name, input_event_path);
+        ioctl(input_file_descriptor, EVIOCGRAB, 0);
+        close(input_file_descriptor);
+    }
     return EXIT_SUCCESS;
 }
 
@@ -146,13 +151,13 @@ int release_input()
 int bind_output()
 {
     // Define the virtual keyboard
-    struct uinput_setup virtualKeyboard;
-    memset(&virtualKeyboard, 0, sizeof(virtualKeyboard));
-    strcpy(virtualKeyboard.name, output_device_name);
-    virtualKeyboard.id.bustype = BUS_USB;
-    virtualKeyboard.id.vendor  = 0x01;
-    virtualKeyboard.id.product = 0x01;
-    virtualKeyboard.id.version = 1;
+    struct uinput_setup virtual_keyboard;
+    memset(&virtual_keyboard, 0, sizeof(virtual_keyboard));
+    strcpy(virtual_keyboard.name, output_device_name);
+    virtual_keyboard.id.bustype = BUS_USB;
+    virtual_keyboard.id.vendor  = 0x01;
+    virtual_keyboard.id.product = 0x01;
+    virtual_keyboard.id.version = 1;
     // Open uinput
     output_file_descriptor = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if (output_file_descriptor < 0)
@@ -177,12 +182,12 @@ int bind_output()
         }
     }
     // Set up the device
-    if (ioctl(output_file_descriptor, UI_DEV_SETUP, &virtualKeyboard) < 0)
+    if (ioctl(output_file_descriptor, UI_DEV_SETUP, &virtual_keyboard) < 0)
     {
        fprintf(stdout, "error: failed to set up the virtual device (UI_DEV_SETUP: %s)\n", strerror(errno)); 
        return EXIT_FAILURE;
     }
-    // Create the device via an IOCTL call 
+    // Create the device
     if (ioctl(output_file_descriptor, UI_DEV_CREATE) < 0)
     {
         fprintf(stdout, "error: failed to create the virtual device (UI_DEV_CREATE: %s)\n", strerror(errno));
@@ -202,12 +207,31 @@ int bind_output()
 }
 
 /**
+ * Releases any held keys on the output device.
+ * */
+void release_output_keys()
+{
+    for (int i = 0; i < MAX_KEYBIT; i++)
+    {
+        if (output_device_keystate[i] > 0)
+        {
+            fprintf(stdout, "info: releasing key: %i\n", i);
+            emit(EV_KEY, i, 0);
+            output_device_keystate[i] = 0;
+        }
+    }
+}
+
+/**
  * Releases the virtual output device.
  * */
 int release_output()
 {
-    fprintf(stdout, "info: releasing: %s (%s)\n", output_device_name, output_sys_path);
-    ioctl(output_file_descriptor, UI_DEV_DESTROY);
-    close(output_file_descriptor);
+    if (output_file_descriptor > 0)
+    {
+        fprintf(stdout, "info: releasing: %s (%s)\n", output_device_name, output_sys_path);
+        ioctl(output_file_descriptor, UI_DEV_DESTROY);
+        close(output_file_descriptor);
+    }
     return EXIT_SUCCESS;
 }
