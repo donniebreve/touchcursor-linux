@@ -10,7 +10,7 @@
  * */
 int emit(int type, int code, int value)
 {
-   //printf("emit: code=%i value=%i\n", code, value); 
+   //printf("emit: code=%i value=%i\n", code, value);
    struct input_event e;
    e.time.tv_sec = 0;
    e.time.tv_usec = 0;
@@ -18,11 +18,11 @@ int emit(int type, int code, int value)
    e.type = type;
    e.code = code;
    e.value = value;
-   write(output, &e, sizeof(e));
+   write(output_file_descriptor, &e, sizeof(e));
    // Emit a syn event
    e.type = EV_SYN;
    e.code = SYN_REPORT;
    e.value = 0;
-   write(output, &e, sizeof(e));
+   write(output_file_descriptor, &e, sizeof(e));
    return 0;
 }

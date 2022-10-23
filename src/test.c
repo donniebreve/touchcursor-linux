@@ -31,7 +31,7 @@ int emit(int type, int code, int value)
 }
 
 // Now include touchcursor
-#include "touchcursor.h"
+#include "mapper.h"
 
 /*
  * Simulates typing keys.
