@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "buffers.h"
 #include "binding.h"
 #include "keys.h"
 #include "strings.h"
@@ -64,7 +65,7 @@ int find_configuration_file()
     char* home_path = getenv("HOME");
     if (!home_path)
     {
-        fprintf(stderr, "error: home path environment variable not specified\n");
+        error("error: home path environment variable not specified\n");
     }
     else
     {
@@ -77,7 +78,7 @@ int find_configuration_file()
     }
     if (file_exists(configuration_file_path))
     {
-        fprintf(stdout, "info: found the configuration file: %s\n", configuration_file_path);
+        log("info: found the configuration file: %s\n", configuration_file_path);
         return EXIT_SUCCESS;
     }
     return EXIT_FAILURE;
@@ -101,7 +102,7 @@ int read_configuration()
     FILE* configuration_file = fopen(configuration_file_path, "r");
     if (!configuration_file)
     {
-        fprintf(stderr, "error: could not open the configuration file\n");
+        error("error: could not open the configuration file\n");
         return EXIT_FAILURE;
     }
     // Parse the configuration file
@@ -143,13 +144,10 @@ int read_configuration()
         {
             case configuration_device:
                 {
-                    if (input_event_path[0] == '\0')
-                    {
-                        char* name = line;
-                        int number = get_device_number(name);
-                        find_device_event_path(name, number);
-                    }
-                    continue;
+                    char* name = line;
+                    int number = get_device_number(name);
+                    find_device_event_path(name, number);
+                    break;
                 }
             case configuration_remap:
                 {
@@ -208,7 +206,7 @@ int read_configuration()
 //         printf("error: could not open /dev/input/\n");
 //         return; //EXIT_FAILURE;
 //     }
-//     fprintf(stdout, "suggestion: use any of the following in the configuration file for this application:\n");
+//     log("suggestion: use any of the following in the configuration file for this application:\n");
 //     struct dirent* directory = NULL;
 //     while ((directory = readdir(directoryStream)))
 //     {
