@@ -1,12 +1,16 @@
 #define _GNU_SOURCE
+#include <errno.h>
+#include <limits.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <errno.h>
 #include <linux/input.h>
+#include <sys/inotify.h>
 
+#include "buffers.h"
 #include "config.h"
 #include "binding.h"
 #include "emit.h"
@@ -14,6 +18,10 @@
 
 volatile sig_atomic_t should_reload = 0;
 volatile sig_atomic_t should_exit = 0;
+static int inotify_descriptor;
+static int watch_descriptor;
+static pthread_t main_thread_identifier;
+static pthread_t watch_thread_identifier;
 
 /**
  * Handles signal events.
@@ -38,14 +46,14 @@ static int attach_signal_handlers()
     stack_t signal_stack;
     if ((signal_stack.ss_sp = malloc(SIGSTKSZ)) == NULL)
     {
-        fprintf(stderr, "error: unable to allocate signal stack: %s\n", strerror(errno));
+        error("error: unable to allocate signal stack: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
     signal_stack.ss_size = SIGSTKSZ;
     signal_stack.ss_flags = 0;
     if (sigaltstack(&signal_stack, (stack_t*)0) < 0)
     {
-        fprintf(stderr, "error: sigaltstack: %s\n", strerror(errno));
+        error("error: sigaltstack: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
     struct sigaction signal_action;
@@ -55,11 +63,114 @@ static int attach_signal_handlers()
     sigaction(SIGHUP, &signal_action, NULL);
     sigaction(SIGINT, &signal_action, NULL);
     sigaction(SIGTERM, &signal_action, NULL);
-    return 0;
+    return EXIT_SUCCESS;
 }
 
+/**
+ * Reads inotify watch events.
+ * */
+static void* read_watch_events()
+{
+    struct inotify_event event;
+    while (1)
+    {
+        if (should_exit)
+        {
+            break;
+        }
+        ssize_t result = read(inotify_descriptor, &event, sizeof(event));
+        if (result == (ssize_t)-1)
+        {
+            if (errno == EINTR)
+            {
+                continue;
+            }
+            else
+            {
+                error("error: unable to read inotify event: %s\n", strerror(errno));
+                error("error: file events will no longer be processed\n");
+                break;
+            }
+        }
+        if (result == (ssize_t)0)
+        {
+            error("error: received eof while reading inotify events\n");
+            error("error: file events will no longer be processed\n");
+            break;
+        }
+        if (result != sizeof(event))
+        {
+            warn("warning: partial inotify event received\n");
+            continue;
+        }
+        if (event.mask & IN_MODIFY)
+        {
+            pthread_kill(main_thread_identifier, SIGHUP);
+        }
+        if (event.mask & IN_DELETE_SELF) {
+            inotify_rm_watch(inotify_descriptor, watch_descriptor);
+            watch_descriptor = inotify_add_watch(inotify_descriptor, configuration_file_path, IN_MODIFY | IN_DELETE_SELF);
+            if (watch_descriptor < 0)
+            {
+                error("error: failed to create the configuration file watch: %s\n", strerror(errno));
+                break;
+            }
+            pthread_kill(main_thread_identifier, SIGHUP);
+        }
+    }
+    pthread_exit(NULL);
+    return EXIT_SUCCESS;
+}
+
+/**
+ * Starts watching for changes in the configuration file.
+ * */
+static int watch_configuration_file()
+{
+    inotify_descriptor = inotify_init();
+    if (inotify_descriptor < 0)
+    {
+        error("error: failed to initialize inotify: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+    watch_descriptor = inotify_add_watch(inotify_descriptor, configuration_file_path, IN_MODIFY | IN_DELETE_SELF);
+    if (watch_descriptor < 0)
+    {
+        error("error: failed to create the configuration file watch: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+    pthread_create(&watch_thread_identifier, NULL, read_watch_events, NULL);
+    return EXIT_SUCCESS;
+}
+
+/**
+ * Releases the configuration file watch.
+ * */
+static int release_configuration_file_watch()
+{
+    if (watch_thread_identifier > 0)
+    {
+        pthread_kill(watch_thread_identifier, SIGTERM);
+        pthread_join(watch_thread_identifier, NULL);
+    }
+    if (watch_descriptor > 0)
+    {
+        log("info: releasing configuration file watch\n");
+        inotify_rm_watch(inotify_descriptor, watch_descriptor);
+    }
+    if (inotify_descriptor > 0)
+    {
+        close(inotify_descriptor);
+    }
+    return EXIT_SUCCESS;
+}
+
+/**
+ * Releases the input and output devices.
+ * */
 static void clean_up()
 {
+    release_configuration_file_watch();
     release_input();
     release_output();
 }
@@ -75,28 +186,37 @@ static void clean_up()
 * */
 int main(int argc, char* argv[])
 {
-    if (attach_signal_handlers() < 0)
+    main_thread_identifier = pthread_self();
+    if (attach_signal_handlers() != EXIT_SUCCESS)
     {
+        error("error: failed to attach signal handlers\n");
+        return EXIT_FAILURE;
+    }
+    if (find_configuration_file() != EXIT_SUCCESS)
+    {
+        error("error: could not find the configuration file\n");
         return EXIT_FAILURE;
     }
     if (read_configuration() != EXIT_SUCCESS)
     {
-        fprintf(stderr, "error: failed to read the configuration\n");
+        error("error: failed to read the configuration\n");
         return EXIT_FAILURE;
     }
-    // Bind the input device
+    if (watch_configuration_file() != EXIT_SUCCESS)
+    {
+        error("error: failed to watch the configuration file\n");
+        return EXIT_FAILURE;
+    }
     if (bind_input() != EXIT_SUCCESS)
     {
-        fprintf(stderr, "error: could not capture the keyboard device\n");
-        return EXIT_FAILURE;
+        error("error: could not capture the input device\n");
     }
-    // Bind the output device
     if (bind_output() != EXIT_SUCCESS)
     {
-        fprintf(stderr, "error: could not create the virtual keyboard device\n");
+        error("error: could not create the virtual output device\n");
         return EXIT_FAILURE;
     }
-    fprintf(stdout, "info: running\n");
+    log("info: running\n");
     // Read events
     struct input_event event;
     ssize_t result;
@@ -104,25 +224,32 @@ int main(int argc, char* argv[])
     {
         if (should_reload)
         {
-            fprintf(stdout, "info: reloading\n");
+            log("info: reloading\n");
+            release_output_keys();
             release_input();
             if (read_configuration() != EXIT_SUCCESS)
             {
-                fprintf(stderr, "error: failed to read the configuration\n");
+                error("error: failed to read the configuration\n");
+                clean_up();
                 return EXIT_FAILURE;
             }
             if (bind_input() != EXIT_SUCCESS)
             {
-                fprintf(stderr, "error: could not capture the keyboard device\n");
-                return EXIT_FAILURE;
+                error("error: could not capture the keyboard device\n");
             }
             should_reload = 0;
         }
         if (should_exit)
         {
-            fprintf(stdout, "info: exiting\n");
+            log("info: exiting\n");
             clean_up();
             return EXIT_SUCCESS;
+        }
+        if (input_event_path[0] == '\0')
+        {
+            log("info: you may update the configuration file to have the application attempt discovering the input device again.\n");
+            sleep(UINT_MAX); // this can be interrupted
+            continue;
         }
         result = read(input_file_descriptor, &event, sizeof(event));
         if (result == (ssize_t)-1)
@@ -133,22 +260,22 @@ int main(int argc, char* argv[])
             }
             else
             {
-                fprintf(stderr, "error: unable to read event\n");
-                fprintf(stdout, "info: exiting\n");
+                error("error: unable to read input event: %s\n", strerror(errno));
+                log("info: exiting\n");
                 clean_up();
                 return EXIT_FAILURE;
             }
         }
         if (result == (ssize_t)0)
         {
-            fprintf(stderr, "error: received EOF\n");
-            fprintf(stdout, "info: exiting\n");
+            error("error: received EOF while reading input events\n");
+            log("info: exiting\n");
             clean_up();
             return EXIT_FAILURE;
         }
         if (result != sizeof(event))
         {
-            fprintf(stdout, "warning: partial event received\n");
+            warn("warning: partial input event received\n");
             continue;
         }
         // We only want to manipulate key presses

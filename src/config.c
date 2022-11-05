@@ -1,15 +1,19 @@
 #define _GNU_SOURCE
+#include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <unistd.h>
 
+#include "buffers.h"
 #include "binding.h"
 #include "keys.h"
 #include "strings.h"
 #include "config.h"
 
 char configuration_file_path[256];
+
 int hyperKey;
 int keymap[256];
 int remap[256];
@@ -17,7 +21,7 @@ int remap[256];
 /**
  * Checks for the device number if it is configured.
  * Also removes the trailing number configuration from the input.
- */
+ * */
 static int get_device_number(char* device_config_value)
 {
     int device_number = 1;
@@ -35,6 +39,51 @@ static int get_device_number(char* device_config_value)
     return device_number;
 }
 
+/**
+ * Checks if a file exists.
+ * */
+static int file_exists(const char* const path)
+{
+    int result = access(path, F_OK);
+    if (result < 0)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+
+/**
+ * Finds the configuration file location.
+ * */
+int find_configuration_file()
+{
+    configuration_file_path[0] = '\0';
+    char* home_path = getenv("HOME");
+    if (!home_path)
+    {
+        error("error: home path environment variable not specified\n");
+    }
+    else
+    {
+        strcat(configuration_file_path, home_path);
+        strcat(configuration_file_path, "/.config/touchcursor/touchcursor.conf");
+    }
+    if (!file_exists(configuration_file_path))
+    {
+        strcpy(configuration_file_path, "/etc/touchcursor/touchcursor.conf");
+    }
+    if (file_exists(configuration_file_path))
+    {
+        log("info: found the configuration file: %s\n", configuration_file_path);
+        return EXIT_SUCCESS;
+    }
+    return EXIT_FAILURE;
+}
+
 static enum sections
 {
     configuration_none,
@@ -49,33 +98,13 @@ static enum sections
  * */
 int read_configuration()
 {
-    // Find the configuration file
-    configuration_file_path[0] = '\0';
-    FILE* configuration_file;
-    char* home_path = getenv("HOME");
-    if (!home_path)
-    {
-        fprintf(stderr, "error: home path environment variable not specified\n");
-    }
-    if (home_path)
-    {
-        strcat(configuration_file_path, home_path);
-        strcat(configuration_file_path, "/.config/touchcursor/touchcursor.conf");
-        fprintf(stdout, "info: looking for the configuration file at: %s\n", configuration_file_path);
-        configuration_file = fopen(configuration_file_path, "r");
-    }
+    // Open the configuration file
+    FILE* configuration_file = fopen(configuration_file_path, "r");
     if (!configuration_file)
     {
-        strcpy(configuration_file_path, "/etc/touchcursor/touchcursor.conf");
-        fprintf(stdout, "info: looking for the configuration file at: %s\n", configuration_file_path);
-        configuration_file = fopen(configuration_file_path, "r");
-    }
-    if (!configuration_file)
-    {
-        fprintf(stderr, "error: could not open the configuration file\n");
+        error("error: could not open the configuration file\n");
         return EXIT_FAILURE;
     }
-    fprintf(stdout, "info: found the configuration file: %s\n", configuration_file_path);
     // Parse the configuration file
     char* buffer = NULL;
     size_t length = 0;
@@ -115,13 +144,10 @@ int read_configuration()
         {
             case configuration_device:
                 {
-                    if (input_event_path[0] == '\0')
-                    {
-                        char* name = line;
-                        int number = get_device_number(name);
-                        find_device_event_path(name, number);
-                    }
-                    continue;
+                    char* name = line;
+                    int number = get_device_number(name);
+                    find_device_event_path(name, number);
+                    break;
                 }
             case configuration_remap:
                 {
@@ -180,7 +206,7 @@ int read_configuration()
 //         printf("error: could not open /dev/input/\n");
 //         return; //EXIT_FAILURE;
 //     }
-//     fprintf(stdout, "suggestion: use any of the following in the configuration file for this application:\n");
+//     log("suggestion: use any of the following in the configuration file for this application:\n");
 //     struct dirent* directory = NULL;
 //     while ((directory = readdir(directoryStream)))
 //     {

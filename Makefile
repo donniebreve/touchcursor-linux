@@ -37,7 +37,7 @@ clean:
 	-rm -f obj/*.o
 	-rm -f $(out_path)/$(binary)
 
-debug:
+debug: $(out_path)/$(binary)
 	@echo "# Stopping the service"
 	-systemctl --user stop $(service)
 	@echo ""
