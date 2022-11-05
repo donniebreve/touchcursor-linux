@@ -19,6 +19,13 @@ int emit(int type, int code, int value)
    e.code = code;
    e.value = value;
    write(output_file_descriptor, &e, sizeof(e));
+
+   if (type == EV_KEY)
+   {
+      // TODO: I don't like this here
+      output_device_keystate[code] = value;
+   }
+
    // Emit a syn event
    e.type = EV_SYN;
    e.code = SYN_REPORT;

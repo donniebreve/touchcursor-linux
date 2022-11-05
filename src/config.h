@@ -22,6 +22,11 @@ extern int keymap[256];
 extern int remap[256];
 
 /**
+ * Finds the configuration file location.
+ * */
+int find_configuration_file();
+
+/**
  * Reads the configuration file.
  * */
 int read_configuration();
