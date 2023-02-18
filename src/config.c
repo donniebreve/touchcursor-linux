@@ -15,8 +15,8 @@
 char configuration_file_path[256];
 
 int hyperKey;
-int keymap[256];
-int remap[256];
+struct mapped_keycodes keymap[256] = {0};
+int remap[256] = {0};
 
 /**
  * Checks for the device number if it is configured.
@@ -169,15 +169,17 @@ int read_configuration()
                     break;
                 }
             case configuration_bindings:
-                {
-                    char* tokens = line;
-                    char* token = strsep(&tokens, "=");
-                    int fromCode = convertKeyStringToCode(token);
-                    token = strsep(&tokens, "=");
+                // Example: 'C=LEFTCTRL C' or 'X=RIGHTSHIFT A B C'
+                char* tokens = line;
+                char* token = strsep(&tokens, "=");
+                int fromCode = convertKeyStringToCode(token);
+                for (int i = 0; i < MAX_CHORDS; i++) {
+                    if (!tokens) continue;
+                    token = strsep(&tokens, " ");
                     int toCode = convertKeyStringToCode(token);
-                    keymap[fromCode] = toCode;
-                    break;
+                    keymap[fromCode].codes[i] = toCode;
                 }
+                break;
             case configuration_none:
             default:
                 {

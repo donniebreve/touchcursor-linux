@@ -27,13 +27,13 @@ static int isHyper(int code)
  * */
 static int isMapped(int code)
 {
-    return keymap[code] != 0;
+    return keymap[code].codes[0] != 0;
 }
 
 /**
  * Converts the input code to the mapped code.
  * */
-static int getMapped(int code)
+static struct mapped_keycodes getMapped(int code)
 {
     return keymap[code];
 }
@@ -142,19 +142,19 @@ void processKey(int type, int code, int value)
                     {
                         if (lengthOfQueue() != 0)
                         {
-                            emit(EV_KEY, getMapped(peek()), 1);
+                            emit_codes(EV_KEY, getMapped(peek()), 1);
                         }
                         enqueue(code);
-                        emit(EV_KEY, getMapped(code), value);
+                        emit_codes(EV_KEY, getMapped(code), value);
                     }
                     else
                     {
                         int length = lengthOfQueue();
                         for (int i = 0; i < length; i++)
                         {
-                            emit(EV_KEY, getMapped(dequeue()), 1);
+                            emit_codes(EV_KEY, getMapped(dequeue()), 1);
                         }
-                        emit(EV_KEY, getMapped(code), value);
+                        emit_codes(EV_KEY, getMapped(code), value);
                     }
                 }
                 else
@@ -174,7 +174,7 @@ void processKey(int type, int code, int value)
                         int length = lengthOfQueue();
                         for (int i = 0; i < length; i++)
                         {
-                            emit(EV_KEY, getMapped(dequeue()), 0);
+                            emit_codes(EV_KEY, getMapped(dequeue()), 0);
                         }
                     }
                 }
@@ -183,11 +183,11 @@ void processKey(int type, int code, int value)
                     if (isDown(value))
                     {
                         enqueue(code);
-                        emit(EV_KEY, getMapped(code), value);
+                        emit_codes(EV_KEY, getMapped(code), value);
                     }
                     else
                     {
-                        emit(EV_KEY, getMapped(code), value);
+                        emit_codes(EV_KEY, getMapped(code), value);
                     }
                 }
                 else
