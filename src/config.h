@@ -14,7 +14,6 @@ extern int hyperKey;
 /**
  * Map for keys and their conversion.
  * */
-//const int MAX_CHORDS = 4;
 #define MAX_CHORDS 4
 struct mapped_keycodes {
 	int codes[MAX_CHORDS];

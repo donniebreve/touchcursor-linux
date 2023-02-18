@@ -98,6 +98,10 @@ static enum sections
  * */
 int read_configuration()
 {
+    // Zero the existing arrays
+    memset(keymap, 0, sizeof(keymap));
+    memset(remap, 0, sizeof(remap));
+
     // Open the configuration file
     FILE* configuration_file = fopen(configuration_file_path, "r");
     if (!configuration_file)
