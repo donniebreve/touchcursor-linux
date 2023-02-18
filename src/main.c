@@ -69,7 +69,7 @@ static int attach_signal_handlers()
 /**
  * Reads inotify watch events.
  * */
-static void* read_watch_events()
+static void* read_watch_events(void *_)
 {
     struct inotify_event event;
     while (1)

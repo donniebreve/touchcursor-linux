@@ -13,7 +13,7 @@ obj_path = ./obj
 out_path = ./out
 binary = touchcursor
 # LIBS = -lm
-cc = gcc
+cc = g++
 cflags = -g -Wall
 # All .h files
 headers = $(wildcard $(src_path)/*.h)
