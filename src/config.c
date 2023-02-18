@@ -169,17 +169,19 @@ int read_configuration()
                     break;
                 }
             case configuration_bindings:
-                // Example: 'C=LEFTCTRL C' or 'X=RIGHTSHIFT A B C'
-                char* tokens = line;
-                char* token = strsep(&tokens, "=");
-                int fromCode = convertKeyStringToCode(token);
-                for (int i = 0; i < MAX_CHORDS; i++) {
-                    if (!tokens) continue;
-                    token = strsep(&tokens, " ");
-                    int toCode = convertKeyStringToCode(token);
-                    keymap[fromCode].codes[i] = toCode;
+                {
+                    // Example: 'C=LEFTCTRL C' or 'X=RIGHTSHIFT A B C'
+                    char* tokens = line;
+                    char* token = strsep(&tokens, "=");
+                    int fromCode = convertKeyStringToCode(token);
+                    for (int i = 0; i < MAX_CHORDS; i++) {
+                        if (!tokens) continue;
+                        token = strsep(&tokens, " ");
+                        int toCode = convertKeyStringToCode(token);
+                        keymap[fromCode].codes[i] = toCode;
+                    }
+                    break;
                 }
-                break;
             case configuration_none:
             default:
                 {
