@@ -5,8 +5,8 @@
 /**
  * Emits a key event.
  * */
-int emit(int type, int code, int value);
+void emit(int type, int code, int value);
 
-int emit_codes(int type, struct mapped_keycodes codes, int value);
+void emit_codes(int type, struct mapped_keycodes codes, int value);
 
 #endif
