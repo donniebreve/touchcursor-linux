@@ -3,18 +3,18 @@
 
 #include "keys.h"
 
-#define S_SWITCH(X) if (0) {}
+#define S_SWITCH() if (keyString == NULL) {return 0;}
 #define S_CASE(X) else if (!strcmp(keyString, (X)))
 #define S_DEFAULT() else
 
 /**
  * Converts a key string (e.g. "KEY_I") to its corresponding code.
- * Key strings can contain any characters except '='
+ * Key strings can contain any characters except '=' and ' '
  * Strings that start with "KEY_" can have that omitted
  * */
 int convertKeyStringToCode(char* keyString)
 {
-    S_SWITCH(keyString)
+    S_SWITCH()
     S_CASE("KEY_ESC") return KEY_ESC;
     S_CASE("ESC")     return KEY_ESC;
     S_CASE("KEY_1") return KEY_1;
