@@ -1,5 +1,5 @@
 // build
-// gcc -Wall queue.c keys.c config.c touchcursor.c test.c  -o ../out/test
+// gcc -Wall queue.c keys.c strings.c binding.c config.c mapper.c test.c  -o ../out/test
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -21,7 +21,7 @@ static char output[256];
 static char emitString[8];
 
 /*
- * Override of the emit function.
+ * Override of the emit function(s).
  */
 int emit(int type, int code, int value)
 {
@@ -30,7 +30,14 @@ int emit(int type, int code, int value)
     return 0;
 }
 
-// Now include touchcursor
+void emit_codes(int type, struct mapped_keycodes codes, int value)
+{
+   for (int i = 0; i < MAX_CHORDS && codes.codes[i]; i++) {
+      emit(type, codes.codes[i], value);
+   }
+}
+
+// Now include the mapper
 #include "mapper.h"
 
 /*
