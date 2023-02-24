@@ -15,7 +15,7 @@
 char configuration_file_path[256];
 
 int hyperKey;
-struct mapped_keycodes keymap[256] = {0};
+struct key_output keymap[256] = {0};
 int remap[256] = {0};
 
 /**
@@ -54,7 +54,6 @@ static int file_exists(const char* const path)
         return 1;
     }
 }
-
 
 /**
  * Finds the configuration file location.
@@ -174,15 +173,14 @@ int read_configuration()
                 }
             case configuration_bindings:
                 {
-                    // Example: 'C=LEFTCTRL C' or 'X=RIGHTSHIFT A B C'
                     char* tokens = line;
                     char* token = strsep(&tokens, "=");
                     int fromCode = convertKeyStringToCode(token);
-                    for (int i = 0; i < MAX_CHORDS; i++) {
-                        if (!tokens) continue;
-                        token = strsep(&tokens, " ");
+                    int index = 0;
+                    while ((token = strsep(&tokens, ",")) != NULL && index < MAX_SEQUENCE)
+                    {
                         int toCode = convertKeyStringToCode(token);
-                        keymap[fromCode].codes[i] = toCode;
+                        keymap[fromCode].sequence[index++] = toCode;
                     }
                     break;
                 }

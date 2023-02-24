@@ -27,27 +27,59 @@ static int isHyper(int code)
  * */
 static int isMapped(int code)
 {
-    return keymap[code].codes[0] != 0;
+    return keymap[code].sequence[0] != 0;
 }
 
 /**
- * Converts the input code to the mapped code.
+ * Sends a mapped key sequence.
  * */
-static struct mapped_keycodes getMapped(int code)
+static void send_mapped_key(int code, int value)
 {
-    return keymap[code];
+    struct key_output output = keymap[code];
+    for (int i = 0; i < MAX_SEQUENCE; i++)
+    {
+        if (output.sequence[i] == 0)
+        {
+            break;
+        }
+        emit(EV_KEY, output.sequence[i], value);
+    }
 }
 
 /**
- * Converts the input code to the remapped code.
+ * Sends all keys in the queue.
  * */
-static int getRemapped(int code)
+static void send_mapped_queue(int value)
+{
+    int length = lengthOfQueue();
+    for (int i = 0; i < length; i++)
+    {
+        send_mapped_key(dequeue(), value);
+    }
+}
+
+/**
+ * Sends a remapped key.
+ * */
+static void send_remapped_key(int code, int value)
 {
     if (remap[code] != 0)
     {
-        return remap[code];
+        code = remap[code];
     }
-    return code;
+    emit(EV_KEY, code, value);
+}
+
+/**
+ * Sends all keys in the queue.
+ * */
+static void send_remapped_queue(int value)
+{
+    int length = lengthOfQueue();
+    for (int i = 0; i < length; i++)
+    {
+        send_remapped_key(dequeue(), value);
+    }
 }
 
 /**
@@ -68,7 +100,7 @@ void processKey(int type, int code, int value)
                 }
                 else
                 {
-                    emit(EV_KEY, getRemapped(code), value);
+                    send_remapped_key(code, value);
                 }
                 break;
             }
@@ -81,9 +113,9 @@ void processKey(int type, int code, int value)
                         state = idle;
                         if (!hyperEmitted)
                         {
-                            emit(EV_KEY, getRemapped(code), 1);
+                            send_remapped_key(code, 1);
                         }
-                        emit(EV_KEY, getRemapped(code), 0);
+                        send_remapped_key(code, 0);
                     }
                 }
                 else if (isMapped(code))
@@ -95,7 +127,7 @@ void processKey(int type, int code, int value)
                     }
                     else
                     {
-                        emit(EV_KEY, getRemapped(code), value);
+                        send_remapped_key(code, value);
                     }
                 }
                 else
@@ -104,15 +136,11 @@ void processKey(int type, int code, int value)
                     {
                         if (!hyperEmitted)
                         {
-                            emit(EV_KEY, getRemapped(hyperKey), 1);
+                            send_remapped_key(hyperKey, 1);
                             hyperEmitted = 1;
                         }
-                        emit(EV_KEY, getRemapped(code), value);
                     }
-                    else
-                    {
-                        emit(EV_KEY, getRemapped(code), value);
-                    }
+                    send_remapped_key(code, value);
                 }
                 break;
             }
@@ -125,14 +153,10 @@ void processKey(int type, int code, int value)
                         state = idle;
                         if (!hyperEmitted)
                         {
-                            emit(EV_KEY, getRemapped(hyperKey), 1);
+                            send_remapped_key(hyperKey, 1);
                         }
-                        int length = lengthOfQueue();
-                        for (int i = 0; i < length; i++)
-                        {
-                            emit(EV_KEY, getRemapped(dequeue()), 1);
-                        }
-                        emit(EV_KEY, getRemapped(hyperKey), 0);
+                        send_remapped_queue(1);
+                        send_remapped_key(hyperKey, 0);
                     }
                 }
                 else if (isMapped(code))
@@ -142,25 +166,21 @@ void processKey(int type, int code, int value)
                     {
                         if (lengthOfQueue() != 0)
                         {
-                            emit_codes(EV_KEY, getMapped(peek()), 1);
+                            send_mapped_key(peek(), 1);
                         }
                         enqueue(code);
-                        emit_codes(EV_KEY, getMapped(code), value);
+                        send_mapped_key(code, value);
                     }
                     else
                     {
-                        int length = lengthOfQueue();
-                        for (int i = 0; i < length; i++)
-                        {
-                            emit_codes(EV_KEY, getMapped(dequeue()), 1);
-                        }
-                        emit_codes(EV_KEY, getMapped(code), value);
+                        send_mapped_queue(1);
+                        send_mapped_key(code, value);
                     }
                 }
                 else
                 {
                     state = map;
-                    emit(EV_KEY, getRemapped(code), value);
+                    send_remapped_key(code, value);
                 }
                 break;
             }
@@ -171,11 +191,7 @@ void processKey(int type, int code, int value)
                     if (!isDown(value))
                     {
                         state = idle;
-                        int length = lengthOfQueue();
-                        for (int i = 0; i < length; i++)
-                        {
-                            emit_codes(EV_KEY, getMapped(dequeue()), 0);
-                        }
+                        send_mapped_queue(0);
                     }
                 }
                 else if (isMapped(code))
@@ -183,16 +199,12 @@ void processKey(int type, int code, int value)
                     if (isDown(value))
                     {
                         enqueue(code);
-                        emit_codes(EV_KEY, getMapped(code), value);
                     }
-                    else
-                    {
-                        emit_codes(EV_KEY, getMapped(code), value);
-                    }
+                    send_mapped_key(code, value);
                 }
                 else
                 {
-                    emit(EV_KEY, getRemapped(code), value);
+                    send_remapped_key(code, value);
                 }
                 break;
             }

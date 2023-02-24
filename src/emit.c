@@ -32,13 +32,3 @@ void emit(int type, int code, int value)
    e.value = 0;
    write(output_file_descriptor, &e, sizeof(e));
 }
-
-/**
- * Emits a key event.
- * */
-void emit_codes(int type, struct mapped_keycodes codes, int value)
-{
-   for (int i = 0; i < MAX_CHORDS && codes.codes[i]; i++) {
-      emit(type, codes.codes[i], value);
-   }
-}

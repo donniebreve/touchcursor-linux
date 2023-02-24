@@ -1,5 +1,7 @@
 // build
-// gcc -Wall queue.c keys.c strings.c binding.c config.c mapper.c test.c  -o ../out/test
+// gcc -Wall src/queue.c src/keys.c src/strings.c src/binding.c src/config.c src/mapper.c src/test.c  -o out/test
+// run
+// ./out/test
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -28,13 +30,6 @@ int emit(int type, int code, int value)
     sprintf(emitString, "%i:%i ", code, value);
     strcat(output, emitString);
     return 0;
-}
-
-void emit_codes(int type, struct mapped_keycodes codes, int value)
-{
-   for (int i = 0; i < MAX_CHORDS && codes.codes[i]; i++) {
-      emit(type, codes.codes[i], value);
-   }
 }
 
 // Now include the mapper
@@ -244,17 +239,17 @@ static int runTests()
 { 
     // default config
     hyperKey = KEY_SPACE;
-    keymap[KEY_I].codes[0] = KEY_UP;
-    keymap[KEY_J].codes[0] = KEY_LEFT;
-    keymap[KEY_K].codes[0] = KEY_DOWN;
-    keymap[KEY_L].codes[0] = KEY_RIGHT;
-    keymap[KEY_H].codes[0] = KEY_PAGEUP;
-    keymap[KEY_N].codes[0] = KEY_PAGEDOWN;
-    keymap[KEY_U].codes[0] = KEY_HOME;
-    keymap[KEY_O].codes[0] = KEY_END;
-    keymap[KEY_M].codes[0] = KEY_DELETE;
-    keymap[KEY_P].codes[0] = KEY_BACKSPACE;
-    keymap[KEY_Y].codes[0] = KEY_INSERT;
+    keymap[KEY_I].sequence[0] = KEY_UP;
+    keymap[KEY_J].sequence[0] = KEY_LEFT;
+    keymap[KEY_K].sequence[0] = KEY_DOWN;
+    keymap[KEY_L].sequence[0] = KEY_RIGHT;
+    keymap[KEY_H].sequence[0] = KEY_PAGEUP;
+    keymap[KEY_N].sequence[0] = KEY_PAGEDOWN;
+    keymap[KEY_U].sequence[0] = KEY_HOME;
+    keymap[KEY_O].sequence[0] = KEY_END;
+    keymap[KEY_M].sequence[0] = KEY_DELETE;
+    keymap[KEY_P].sequence[0] = KEY_BACKSPACE;
+    keymap[KEY_Y].sequence[0] = KEY_INSERT;
 
     mu_run_test(testNormalTyping);
     printf("Normal typing tests passed.\n");

@@ -1,6 +1,8 @@
 #ifndef config_h
 #define config_h
 
+#define MAX_SEQUENCE 4
+
 /**
  * The configuration file path.
  * */
@@ -14,11 +16,11 @@ extern int hyperKey;
 /**
  * Map for keys and their conversion.
  * */
-#define MAX_CHORDS 4
-struct mapped_keycodes {
-	int codes[MAX_CHORDS];
+struct key_output
+{
+	int sequence[MAX_SEQUENCE];
 };
-extern struct mapped_keycodes keymap[256];
+extern struct key_output keymap[256];
 
 /**
  * Map for permanently remapped keys.
