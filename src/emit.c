@@ -8,7 +8,7 @@
 /**
  * Emits a key event.
  * */
-int emit(int type, int code, int value)
+void emit(int type, int code, int value)
 {
    //printf("emit: code=%i value=%i\n", code, value);
    struct input_event e;
@@ -31,5 +31,14 @@ int emit(int type, int code, int value)
    e.code = SYN_REPORT;
    e.value = 0;
    write(output_file_descriptor, &e, sizeof(e));
-   return 0;
+}
+
+/**
+ * Emits a key event.
+ * */
+void emit_codes(int type, struct mapped_keycodes codes, int value)
+{
+   for (int i = 0; i < MAX_CHORDS && codes.codes[i]; i++) {
+      emit(type, codes.codes[i], value);
+   }
 }

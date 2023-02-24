@@ -237,17 +237,17 @@ static int runTests()
 { 
     // default config
     hyperKey = KEY_SPACE;
-    keymap[KEY_I] = KEY_UP;
-    keymap[KEY_J] = KEY_LEFT;
-    keymap[KEY_K] = KEY_DOWN;
-    keymap[KEY_L] = KEY_RIGHT;
-    keymap[KEY_H] = KEY_PAGEUP;
-    keymap[KEY_N] = KEY_PAGEDOWN;
-    keymap[KEY_U] = KEY_HOME;
-    keymap[KEY_O] = KEY_END;
-    keymap[KEY_M] = KEY_DELETE;
-    keymap[KEY_P] = KEY_BACKSPACE;
-    keymap[KEY_Y] = KEY_INSERT;
+    keymap[KEY_I].codes[0] = KEY_UP;
+    keymap[KEY_J].codes[0] = KEY_LEFT;
+    keymap[KEY_K].codes[0] = KEY_DOWN;
+    keymap[KEY_L].codes[0] = KEY_RIGHT;
+    keymap[KEY_H].codes[0] = KEY_PAGEUP;
+    keymap[KEY_N].codes[0] = KEY_PAGEDOWN;
+    keymap[KEY_U].codes[0] = KEY_HOME;
+    keymap[KEY_O].codes[0] = KEY_END;
+    keymap[KEY_M].codes[0] = KEY_DELETE;
+    keymap[KEY_P].codes[0] = KEY_BACKSPACE;
+    keymap[KEY_Y].codes[0] = KEY_INSERT;
 
     mu_run_test(testNormalTyping);
     printf("Normal typing tests passed.\n");
