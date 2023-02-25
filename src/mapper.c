@@ -1,12 +1,12 @@
-#include <stdio.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
+#include <stdio.h>
 
-#include "queue.h"
-#include "keys.h"
 #include "config.h"
 #include "emit.h"
+#include "keys.h"
 #include "mapper.h"
+#include "queue.h"
 
 // The state machine state
 enum states state = idle;
@@ -91,123 +91,123 @@ void processKey(int type, int code, int value)
     switch (state)
     {
         case idle: // 0
+        {
+            if (isHyper(code) && isDown(value))
             {
-                if (isHyper(code) && isDown(value))
-                {
-                    state = hyper;
-                    hyperEmitted = 0;
-                    clearQueue();
-                }
-                else
-                {
-                    send_remapped_key(code, value);
-                }
-                break;
+                state = hyper;
+                hyperEmitted = 0;
+                clearQueue();
             }
+            else
+            {
+                send_remapped_key(code, value);
+            }
+            break;
+        }
         case hyper: // 1
+        {
+            if (isHyper(code))
             {
-                if (isHyper(code))
+                if (!isDown(value))
                 {
-                    if (!isDown(value))
+                    state = idle;
+                    if (!hyperEmitted)
                     {
-                        state = idle;
-                        if (!hyperEmitted)
-                        {
-                            send_remapped_key(code, 1);
-                        }
-                        send_remapped_key(code, 0);
+                        send_remapped_key(code, 1);
                     }
+                    send_remapped_key(code, 0);
                 }
-                else if (isMapped(code))
+            }
+            else if (isMapped(code))
+            {
+                if (isDown(value))
                 {
-                    if (isDown(value))
-                    {
-                        state = delay;
-                        enqueue(code);
-                    }
-                    else
-                    {
-                        send_remapped_key(code, value);
-                    }
+                    state = delay;
+                    enqueue(code);
                 }
                 else
                 {
-                    if (!isModifier(code) && isDown(value))
-                    {
-                        if (!hyperEmitted)
-                        {
-                            send_remapped_key(hyperKey, 1);
-                            hyperEmitted = 1;
-                        }
-                    }
                     send_remapped_key(code, value);
                 }
-                break;
             }
+            else
+            {
+                if (!isModifier(code) && isDown(value))
+                {
+                    if (!hyperEmitted)
+                    {
+                        send_remapped_key(hyperKey, 1);
+                        hyperEmitted = 1;
+                    }
+                }
+                send_remapped_key(code, value);
+            }
+            break;
+        }
         case delay: // 2
+        {
+            if (isHyper(code))
             {
-                if (isHyper(code))
+                if (!isDown(value))
                 {
-                    if (!isDown(value))
+                    state = idle;
+                    if (!hyperEmitted)
                     {
-                        state = idle;
-                        if (!hyperEmitted)
-                        {
-                            send_remapped_key(hyperKey, 1);
-                        }
-                        send_remapped_queue(1);
-                        send_remapped_key(hyperKey, 0);
+                        send_remapped_key(hyperKey, 1);
                     }
+                    send_remapped_queue(1);
+                    send_remapped_key(hyperKey, 0);
                 }
-                else if (isMapped(code))
-                {
-                    state = map;
-                    if (isDown(value))
-                    {
-                        if (lengthOfQueue() != 0)
-                        {
-                            send_mapped_key(peek(), 1);
-                        }
-                        enqueue(code);
-                        send_mapped_key(code, value);
-                    }
-                    else
-                    {
-                        send_mapped_queue(1);
-                        send_mapped_key(code, value);
-                    }
-                }
-                else
-                {
-                    state = map;
-                    send_remapped_key(code, value);
-                }
-                break;
             }
-        case map: // 3
+            else if (isMapped(code))
             {
-                if (isHyper(code))
+                state = map;
+                if (isDown(value))
                 {
-                    if (!isDown(value))
+                    if (lengthOfQueue() != 0)
                     {
-                        state = idle;
-                        send_mapped_queue(0);
+                        send_mapped_key(peek(), 1);
                     }
-                }
-                else if (isMapped(code))
-                {
-                    if (isDown(value))
-                    {
-                        enqueue(code);
-                    }
+                    enqueue(code);
                     send_mapped_key(code, value);
                 }
                 else
                 {
-                    send_remapped_key(code, value);
+                    send_mapped_queue(1);
+                    send_mapped_key(code, value);
                 }
-                break;
             }
+            else
+            {
+                state = map;
+                send_remapped_key(code, value);
+            }
+            break;
+        }
+        case map: // 3
+        {
+            if (isHyper(code))
+            {
+                if (!isDown(value))
+                {
+                    state = idle;
+                    send_mapped_queue(0);
+                }
+            }
+            else if (isMapped(code))
+            {
+                if (isDown(value))
+                {
+                    enqueue(code);
+                }
+                send_mapped_key(code, value);
+            }
+            else
+            {
+                send_remapped_key(code, value);
+            }
+            break;
+        }
     }
     /* printf("processKey(out): state=%i\n", state); */
 }

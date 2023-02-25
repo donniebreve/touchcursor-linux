@@ -2,17 +2,17 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <linux/input.h>
+#include <linux/uinput.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <linux/input.h>
-#include <linux/uinput.h>
 
-#include "strings.h"
-#include "buffers.h"
 #include "binding.h"
+#include "buffers.h"
 #include "emit.h"
+#include "strings.h"
 
 // The input device
 char input_device_name[256] = "Unknown";
@@ -161,7 +161,7 @@ int bind_output()
     memset(&virtual_keyboard, 0, sizeof(virtual_keyboard));
     strcpy(virtual_keyboard.name, output_device_name);
     virtual_keyboard.id.bustype = BUS_USB;
-    virtual_keyboard.id.vendor  = 0x01;
+    virtual_keyboard.id.vendor = 0x01;
     virtual_keyboard.id.product = 0x01;
     virtual_keyboard.id.version = 1;
     // Open uinput

@@ -6,17 +6,17 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "buffers.h"
 #include "binding.h"
+#include "buffers.h"
+#include "config.h"
 #include "keys.h"
 #include "strings.h"
-#include "config.h"
 
 char configuration_file_path[256];
 
 int hyperKey;
-struct key_output keymap[256] = {0};
-int remap[256] = {0};
+struct key_output keymap[256] = { 0 };
+int remap[256] = { 0 };
 
 /**
  * Checks for the device number if it is configured.
@@ -83,8 +83,7 @@ int find_configuration_file()
     return EXIT_FAILURE;
 }
 
-static enum sections
-{
+static enum sections {
     configuration_none,
     configuration_device,
     configuration_remap,
@@ -146,49 +145,49 @@ int read_configuration()
         switch (section)
         {
             case configuration_device:
-                {
-                    char* name = line;
-                    int number = get_device_number(name);
-                    find_device_event_path(name, number);
-                    break;
-                }
+            {
+                char* name = line;
+                int number = get_device_number(name);
+                find_device_event_path(name, number);
+                break;
+            }
             case configuration_remap:
-                {
-                    char* tokens = line;
-                    char* token = strsep(&tokens, "=");
-                    int fromCode = convertKeyStringToCode(token);
-                    token = strsep(&tokens, "=");
-                    int toCode = convertKeyStringToCode(token);
-                    remap[fromCode] = toCode;
-                    break;
-                }
+            {
+                char* tokens = line;
+                char* token = strsep(&tokens, "=");
+                int fromCode = convertKeyStringToCode(token);
+                token = strsep(&tokens, "=");
+                int toCode = convertKeyStringToCode(token);
+                remap[fromCode] = toCode;
+                break;
+            }
             case configuration_hyper:
-                {
-                    char* tokens = line;
-                    char* token = strsep(&tokens, "=");
-                    token = strsep(&tokens, "=");
-                    int code = convertKeyStringToCode(token);
-                    hyperKey = code;
-                    break;
-                }
+            {
+                char* tokens = line;
+                char* token = strsep(&tokens, "=");
+                token = strsep(&tokens, "=");
+                int code = convertKeyStringToCode(token);
+                hyperKey = code;
+                break;
+            }
             case configuration_bindings:
+            {
+                char* tokens = line;
+                char* token = strsep(&tokens, "=");
+                int fromCode = convertKeyStringToCode(token);
+                int index = 0;
+                while ((token = strsep(&tokens, ",")) != NULL && index < MAX_SEQUENCE)
                 {
-                    char* tokens = line;
-                    char* token = strsep(&tokens, "=");
-                    int fromCode = convertKeyStringToCode(token);
-                    int index = 0;
-                    while ((token = strsep(&tokens, ",")) != NULL && index < MAX_SEQUENCE)
-                    {
-                        int toCode = convertKeyStringToCode(token);
-                        keymap[fromCode].sequence[index++] = toCode;
-                    }
-                    break;
+                    int toCode = convertKeyStringToCode(token);
+                    keymap[fromCode].sequence[index++] = toCode;
                 }
+                break;
+            }
             case configuration_none:
             default:
-                {
-                    continue;
-                }
+            {
+                continue;
+            }
         }
     }
     fclose(configuration_file);

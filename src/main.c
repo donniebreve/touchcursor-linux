@@ -1,18 +1,18 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include <limits.h>
+#include <linux/input.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <linux/input.h>
 #include <sys/inotify.h>
+#include <unistd.h>
 
+#include "binding.h"
 #include "buffers.h"
 #include "config.h"
-#include "binding.h"
 #include "emit.h"
 #include "mapper.h"
 
@@ -107,7 +107,8 @@ static void* read_watch_events()
         {
             pthread_kill(main_thread_identifier, SIGHUP);
         }
-        if (event.mask & IN_DELETE_SELF) {
+        if (event.mask & IN_DELETE_SELF)
+        {
             inotify_rm_watch(inotify_descriptor, watch_descriptor);
             watch_descriptor = inotify_add_watch(inotify_descriptor, configuration_file_path, IN_MODIFY | IN_DELETE_SELF);
             if (watch_descriptor < 0)
@@ -176,14 +177,14 @@ static void clean_up()
 }
 
 /**
-* Main method.
-*
-* @remarks
-* read: Read NBYTES into BUF from FD. Return the number read, -1 for errors or 0 for EOF.
-* EOF doesn't make sense here. Partial events will be ignored.
-* https://docs.kernel.org/input/uinput.html
-* https://stackoverflow.com/questions/20943322/accessing-keys-from-linux-input-device
-* */
+ * Main method.
+ *
+ * @remarks
+ * read: Read NBYTES into BUF from FD. Return the number read, -1 for errors or 0 for EOF.
+ * EOF doesn't make sense here. Partial events will be ignored.
+ * https://docs.kernel.org/input/uinput.html
+ * https://stackoverflow.com/questions/20943322/accessing-keys-from-linux-input-device
+ * */
 int main(int argc, char* argv[])
 {
     main_thread_identifier = pthread_self();

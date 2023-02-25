@@ -1,6 +1,6 @@
+#include <linux/input.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <linux/input.h>
 
 #include "binding.h"
 #include "emit.h"
@@ -10,25 +10,25 @@
  * */
 void emit(int type, int code, int value)
 {
-   //printf("emit: code=%i value=%i\n", code, value);
-   struct input_event e;
-   e.time.tv_sec = 0;
-   e.time.tv_usec = 0;
-   // Set the virtual key code / value
-   e.type = type;
-   e.code = code;
-   e.value = value;
-   write(output_file_descriptor, &e, sizeof(e));
+    // printf("emit: code=%i value=%i\n", code, value);
+    struct input_event e;
+    e.time.tv_sec = 0;
+    e.time.tv_usec = 0;
+    // Set the virtual key code / value
+    e.type = type;
+    e.code = code;
+    e.value = value;
+    write(output_file_descriptor, &e, sizeof(e));
 
-   if (type == EV_KEY)
-   {
-      // TODO: I don't like this here
-      output_device_keystate[code] = value;
-   }
+    if (type == EV_KEY)
+    {
+        // TODO: I don't like this here
+        output_device_keystate[code] = value;
+    }
 
-   // Emit a syn event
-   e.type = EV_SYN;
-   e.code = SYN_REPORT;
-   e.value = 0;
-   write(output_file_descriptor, &e, sizeof(e));
+    // Emit a syn event
+    e.type = EV_SYN;
+    e.code = SYN_REPORT;
+    e.value = 0;
+    write(output_file_descriptor, &e, sizeof(e));
 }

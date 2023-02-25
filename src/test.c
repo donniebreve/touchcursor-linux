@@ -3,17 +3,27 @@
 // run
 // ./out/test
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <linux/input.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "keys.h"
 #include "config.h"
+#include "keys.h"
 
 // minunit http://www.jera.com/techinfo/jtns/jtn002.html
-#define mu_assert(message, test) do { if (!(test)) return message; } while (0)
-#define mu_run_test(test) do { int result = test(); tests_run++; if (result != 0) return result; } while (0)
+#define mu_assert(message, test)     \
+    do                               \
+    {                                \
+        if (!(test)) return message; \
+    } while (0)
+#define mu_run_test(test)               \
+    do                                  \
+    {                                   \
+        int result = test();            \
+        tests_run++;                    \
+        if (result != 0) return result; \
+    } while (0)
 static int tests_run;
 
 // String for the full key event output
@@ -61,85 +71,99 @@ static int testNormalTyping()
 {
     // Space down, up
     char* description = "sd, su";
-    char* expected    = "57:1 57:0 ";
+    char* expected = "57:1 57:0 ";
     type(4, KEY_SPACE, 1, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
     // Space down, up, down, up
     description = "sd, su, sd, su";
-    expected    = "57:1 57:0 57:1 57:0 ";
+    expected = "57:1 57:0 57:1 57:0 ";
     type(8, KEY_SPACE, 1, KEY_SPACE, 0, KEY_SPACE, 1, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
     // Other down, Space down, up, Other up
     description = "od, sd, su, ou";
-    expected    = "31:1 57:1 57:0 31:0 ";
+    expected = "31:1 57:1 57:0 31:0 ";
     type(8, KEY_S, 1, KEY_SPACE, 1, KEY_SPACE, 0, KEY_S, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
     // Space down, Other down, up, Space up
     description = "sd, od, ou, su";
-    expected    = "57:1 31:1 31:0 57:0 ";
+    expected = "57:1 31:1 31:0 57:0 ";
     type(8, KEY_SPACE, 1, KEY_S, 1, KEY_S, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
     // Mapped down, Space down, up, Mapped up
     description = "md, sd, su, mu";
-    expected    = "36:1 57:1 57:0 36:0 ";
+    expected = "36:1 57:1 57:0 36:0 ";
     type(8, KEY_J, 1, KEY_SPACE, 1, KEY_SPACE, 0, KEY_J, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
     // Space down, Mapped down, up, Space up
     description = "sd, md, mu, su";
-    expected    = "105:1 105:0 ";
+    expected = "105:1 105:0 ";
     type(8, KEY_SPACE, 1, KEY_J, 1, KEY_J, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
     // Mapped down, Space down, up, Different mapped down, up, Mapped up
     description = "m1d, sd, su, m2d, m2u, m1u";
-    expected    = "36:1 57:1 57:0 23:1 23:0 36:0 ";
+    expected = "36:1 57:1 57:0 23:1 23:0 36:0 ";
     type(12, KEY_J, 1, KEY_SPACE, 1, KEY_SPACE, 0, KEY_I, 1, KEY_I, 0, KEY_J, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
@@ -155,13 +179,15 @@ static int testFastTyping()
     // Space down, mapped down, space up, mapped up
     // The mapped key should not be converted
     char* description = "sd, md, su, mu";
-    char* expected    = "57:1 36:1 57:0 36:0 ";
+    char* expected = "57:1 36:1 57:0 36:0 ";
     type(8, KEY_SPACE, 1, KEY_J, 1, KEY_SPACE, 0, KEY_J, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
@@ -169,13 +195,15 @@ static int testFastTyping()
     // The mapped key should not be converted
     // This is not out of order, remember space down does not emit anything
     description = "md, sd, mu, su";
-    expected    = "36:1 36:0 57:1 57:0 ";
+    expected = "36:1 36:0 57:1 57:0 ";
     type(8, KEY_J, 1, KEY_SPACE, 1, KEY_J, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
@@ -183,13 +211,15 @@ static int testFastTyping()
     // The mapped keys should be sent converted
     // Extra up events are sent, but that does not matter
     description = "sd, m1d, m2d, su, m1u, m2u";
-    expected    = "105:1 103:1 105:0 103:0 36:0 23:0 ";
+    expected = "105:1 103:1 105:0 103:0 36:0 23:0 ";
     type(12, KEY_SPACE, 1, KEY_J, 1, KEY_I, 1, KEY_SPACE, 0, KEY_J, 0, KEY_I, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
@@ -197,13 +227,15 @@ static int testFastTyping()
     // The mapped keys should be sent converted
     // Extra up events are sent, but that does not matter
     description = "sd, m1d, m2d, m3d, su, m1u, m2u, m3u";
-    expected    = "105:1 103:1 106:1 105:0 103:0 106:0 36:0 23:0 38:0 ";
+    expected = "105:1 103:1 106:1 105:0 103:0 106:0 36:0 23:0 38:0 ";
     type(16, KEY_SPACE, 1, KEY_J, 1, KEY_I, 1, KEY_L, 1, KEY_SPACE, 0, KEY_J, 0, KEY_I, 0, KEY_L, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
@@ -219,13 +251,15 @@ static int testSpecialTyping()
     // Space down, other (modifier) down, other (modifier) up, space up
     // The key should be output, hyper mode retained
     char* description = "sd, od, ou, su";
-    char* expected    = "42:1 42:0 ";
+    char* expected = "42:1 42:0 ";
     type(6, KEY_SPACE, 1, KEY_LEFTSHIFT, 1, KEY_LEFTSHIFT, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0) {
+    if (strcmp(expected, output) != 0)
+    {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
         return 1;
     }
-    else {
+    else
+    {
         printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
     }
 
@@ -236,7 +270,7 @@ static int testSpecialTyping()
  * Simple method for running all tests.
  */
 static int runTests()
-{ 
+{
     // default config
     hyperKey = KEY_SPACE;
     keymap[KEY_I].sequence[0] = KEY_UP;
@@ -269,8 +303,14 @@ static int runTests()
 int main()
 {
     int result = runTests();
-    if (result != 0) { printf("Some tests failed\n"); }
-    else { printf("All tests passed!\n"); }
+    if (result != 0)
+    {
+        printf("Some tests failed\n");
+    }
+    else
+    {
+        printf("All tests passed!\n");
+    }
     printf("Tests run: %d\n", tests_run);
 }
 
@@ -379,10 +419,10 @@ int main()
 
 // run configure tests
 // idle
-// CHECK((F5, dn,  F5,dn, 0)); 
-// CHECK((SP, dn,  F5,dn, 0)); 
+// CHECK((F5, dn,  F5,dn, 0));
+// CHECK((SP, dn,  F5,dn, 0));
 // wmd
-// CHECK((F5, dn,  F5,dn, '*',dn, 0)); 
+// CHECK((F5, dn,  F5,dn, '*',dn, 0));
 // CHECK((F5, up,  F5,dn, '*',dn, F5,up, 0));
 // CHECK((j, dn,   F5,dn, '*',dn, F5,up, 0));
 // wmu
@@ -392,7 +432,7 @@ int main()
 // CHECK((F5, dn,  F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, '*',dn, 0));
 // CHECK((SP, up,  F5,dn, '*',dn, F5,up, '*',dn, LE,edn, LE,up, '*',dn, 0));
 
-// CHECK((SP, dn,  0)); 
+// CHECK((SP, dn,  0));
 // wmd
 // CHECK((x, dn,   SP,dn, x,dn, 0));
 // wmd-se

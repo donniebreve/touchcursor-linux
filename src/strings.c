@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
-#include <string.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "strings.h"
 
@@ -14,7 +14,7 @@ char* trim_comment(char* s)
 {
     if (s != NULL)
     {
-        char *p  = strchr(s, '#');
+        char* p = strchr(s, '#');
         if (p != NULL)
         {
             // p points to the start of the comment.
@@ -36,9 +36,9 @@ char* trim_string(char* s)
     while (isspace((unsigned char)*s)) s++;
     if (*s)
     {
-        char *p = s;
+        char* p = s;
         while (*p) p++;
-        while (isspace((unsigned char) *(--p)));
+        while (isspace((unsigned char)*(--p)));
         p[1] = '\0';
     }
     return s;
