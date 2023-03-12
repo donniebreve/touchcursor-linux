@@ -8,11 +8,16 @@
 #include "mapper.h"
 #include "queue.h"
 
+#include "get_layer.h"
+
 // The state machine state
 enum states state = idle;
 
 // Flag if the hyper key has been emitted
 static int hyperEmitted;
+
+// Counter for the active layer
+int active_layer = 0;
 
 /**
  * Checks if the key is the hyper key.
@@ -20,6 +25,17 @@ static int hyperEmitted;
 static int isHyper(int code)
 {
     return code == hyperKey;
+}
+
+/**
+ * Converts the input code to the mapped code.
+ * */
+static int getRemappedWithLayer(int code, int layer)
+{
+    if (! matrix_remap[layer][code]){
+        return code;
+    }
+    return matrix_remap[layer][code];
 }
 
 /**
@@ -63,11 +79,17 @@ static void send_mapped_queue(int value)
  * */
 static void send_remapped_key(int code, int value)
 {
-    if (remap[code] != 0)
-    {
-        code = remap[code];
+    active_layer=(int) get_layer();
+
+    if(active_layer == 0){
+        if (remap[code] != 0)
+        {
+            code = remap[code];
+        }
+        emit(EV_KEY, code, value);
+        return;
     }
-    emit(EV_KEY, code, value);
+    emit(EV_KEY, getRemappedWithLayer(code, active_layer), value);
 }
 
 /**

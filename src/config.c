@@ -16,7 +16,9 @@ char configuration_file_path[256];
 
 int hyperKey;
 struct key_output keymap[256] = { 0 };
-int remap[256] = { 0 };
+int remap[255] = { 0 };
+
+int **matrix_remap = NULL;
 
 /**
  * Checks for the device number if it is configured.
@@ -87,6 +89,7 @@ static enum sections {
     configuration_none,
     configuration_device,
     configuration_remap,
+    configuration_remap_with_layer,
     configuration_hyper,
     configuration_bindings,
     configuration_invalid
@@ -108,8 +111,16 @@ int read_configuration()
         error("error: could not open the configuration file\n");
         return EXIT_FAILURE;
     }
+    // Init the matrix_remap
+    matrix_remap = (int **) malloc(sizeof(int *)*MAX_LAYERS_AMM);
+    for(int i=0; i<MAX_LAYERS_AMM; i++){
+        matrix_remap[i] = (int *) malloc(sizeof(int)*MAX_CHAR_AMM);
+        for(int j=0; j<MAX_CHAR_AMM; j++)
+            matrix_remap[i][j]=0; // init with invalid keys
+    }
     // Parse the configuration file
     char* buffer = NULL;
+    char config_layer = 0;
     size_t length = 0;
     ssize_t result = -1;
     while ((result = getline(&buffer, &length, configuration_file)) != -1)
@@ -133,6 +144,12 @@ int read_configuration()
             if (strncmp(line, "[Remap]", line_length) == 0)
             {
                 section = configuration_remap;
+                continue;
+            }
+            if (strncmp(line, "[Remap", strlen("[Remap")) == 0)
+            {
+                section = configuration_remap_with_layer;
+                config_layer = line[6]-'0';
                 continue;
             }
             if (strncmp(line, "[Hyper]", line_length) == 0)
@@ -170,6 +187,21 @@ int read_configuration()
                 token = strsep(&tokens, "=");
                 int toCode = convertKeyStringToCode(token);
                 remap[fromCode] = toCode;
+                break;
+            }
+            case configuration_remap_with_layer:
+            {
+                log("saving at configuration_remap_with_layer\n");
+                log("layer: %d\n", config_layer);
+                char* tokens = line;
+                char* token = strsep(&tokens, "=");
+                log("%s\n", token);
+                log("%s\n", tokens);
+                int fromCode = convertKeyStringToCode(token);
+                token = strsep(&tokens, "=");
+                int toCode = convertKeyStringToCode(token);
+                matrix_remap[(int)config_layer][fromCode] = toCode;
+                log("the char: %s\n", token);
                 break;
             }
             case configuration_hyper:

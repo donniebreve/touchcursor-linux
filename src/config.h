@@ -1,6 +1,8 @@
 #ifndef config_h
 #define config_h
-
+ 
+#define MAX_CHAR_AMM 255
+#define MAX_LAYERS_AMM 8
 #define MAX_SEQUENCE 4
 
 /**
@@ -14,6 +16,16 @@ extern char configuration_file_path[256];
 extern int hyperKey;
 
 /**
+ * The current active layer:
+ * */
+extern int active_layer;
+
+/**
+ * Matrix to allocate MAX_LAYERS_AMM rows of keymaps
+ * */
+extern int **matrix_remap;
+
+/**
  * Map for keys and their conversion.
  * */
 struct key_output
@@ -21,11 +33,12 @@ struct key_output
 	int sequence[MAX_SEQUENCE];
 };
 extern struct key_output keymap[256];
+extern int brunosoe_keymap[MAX_CHAR_AMM];
 
 /**
  * Map for permanently remapped keys.
  * */
-extern int remap[256];
+extern int remap[MAX_CHAR_AMM];
 
 /**
  * Finds the configuration file location.
