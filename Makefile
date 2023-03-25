@@ -25,17 +25,17 @@ objects = $(patsubst $(src_path)/%.c, $(obj_path)/%.o, $(sources))
 # The binary depends on all .o files
 # This is the main target of the make file
 $(out_path)/$(binary): $(objects)
-	@mkdir -p $(out_path)
+	@mkdir --parents $(out_path)
 	$(cc) $(objects) -Wall -o $@
 
 # Each .o file depends on its .c file and .h file (we include all headers)
 $(obj_path)/%.o: $(src_path)/%.c $(headers)
-	@mkdir -p $(obj_path)
+	@mkdir --parents $(obj_path)
 	$(cc) $(cflags) -c $< -o $@
 
 clean:
-	-rm -f obj/*.o
-	-rm -f $(out_path)/$(binary)
+	-rm --force obj/*.o
+	-rm --force $(out_path)/$(binary)
 
 debug: $(out_path)/$(binary)
 	@echo "# Stopping the service"
@@ -56,18 +56,18 @@ install:
 
 	@echo "# Copying application to $(INSTALLPATH)"
 	@echo "# This action requires sudo."
-	sudo cp $(out_path)/$(binary) $(INSTALLPATH)
+	sudo cp --force $(out_path)/$(binary) $(INSTALLPATH)
 	sudo chmod u+s $(INSTALLPATH)/$(binary)
 	@echo ""
 
 	@echo "# Copying service file to $(SERVICEPATH)"
-	mkdir -p $(SERVICEPATH)
-	cp -f $(service) $(SERVICEPATH)
+	mkdir --parents $(SERVICEPATH)
+	cp --force $(service) $(SERVICEPATH)
 	@echo ""
 
 	@echo "# Copying default configuration file to $(CONFIGPATH)/$(config)"
-	mkdir -p $(CONFIGPATH)
-	cp -n $(config) $(CONFIGPATH)
+	mkdir --parents $(CONFIGPATH)
+	-cp --no-clobber $(config) $(CONFIGPATH)
 	@echo ""
 
 	@echo "# Enabling and starting the service"
@@ -89,7 +89,7 @@ uninstall:
 
 	@echo "# Removing service file from $(SERVICEPATH)"
 	-rm $(SERVICEPATH)/$(service)
-	-rm -d $(SERVICEPATH)
+	-rm --dir $(SERVICEPATH)
 	@echo ""
 
 	@echo "# Removing application from $(INSTALLPATH)"
@@ -105,7 +105,7 @@ uninstall-full:
 
 	@echo "# Removing service file from $(SERVICEPATH)"
 	-rm $(SERVICEPATH)/$(service)
-	-rm -d $(SERVICEPATH)
+	-rm --dir $(SERVICEPATH)
 	@echo ""
 
 	@echo "# Removing application from $(INSTALLPATH)"
@@ -115,5 +115,5 @@ uninstall-full:
 
 	@echo "# Removing configuration file $(CONFIGPATH)/$(config)"
 	-rm $(CONFIGPATH)/$(config)
-	-rm -d $(CONFIGPATH)
+	-rm --dir $(CONFIGPATH)
 	@echo ""
