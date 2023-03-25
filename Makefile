@@ -14,7 +14,7 @@ out_path = ./out
 binary = touchcursor
 # LIBS = -lm
 cc = gcc
-cflags = -g -Wall
+cflags = -pthread -g -Wall
 # All .h files
 headers = $(wildcard $(src_path)/*.h)
 # All .c files, excluding test.c
