@@ -84,12 +84,13 @@ int find_device_event_path(char* name, int number)
             }
         }
     }
+    fclose(devices_file);
+    if (line) free(line);
     if (!found_event)
     {
         error("error: could not find the event path for device: %s:%i\n", name, number);
+        return EXIT_FAILURE;
     }
-    fclose(devices_file);
-    if (line) free(line);
     return EXIT_SUCCESS;
 }
 

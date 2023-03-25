@@ -148,7 +148,10 @@ int read_configuration()
             {
                 char* name = line;
                 int number = get_device_number(name);
-                find_device_event_path(name, number);
+                if (find_device_event_path(name, number) == EXIT_SUCCESS)
+                {
+                    section = configuration_none;
+                }
                 break;
             }
             case configuration_remap:
