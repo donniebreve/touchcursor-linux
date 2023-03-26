@@ -88,7 +88,8 @@ static enum sections {
     configuration_device,
     configuration_remap,
     configuration_hyper,
-    configuration_bindings
+    configuration_bindings,
+    configuration_invalid
 } section;
 
 /**
@@ -121,24 +122,31 @@ int read_configuration()
             continue;
         }
         // Check for section
-        if (strncmp(line, "[Device]", strlen(line)) == 0)
+        if (line[0] == '[')
         {
-            section = configuration_device;
-            continue;
-        }
-        if (strncmp(line, "[Remap]", strlen(line)) == 0)
-        {
-            section = configuration_remap;
-            continue;
-        }
-        if (strncmp(line, "[Hyper]", strlen(line)) == 0)
-        {
-            section = configuration_hyper;
-            continue;
-        }
-        if (strncmp(line, "[Bindings]", strlen(line)) == 0)
-        {
-            section = configuration_bindings;
+            size_t line_length = strlen(line);
+            if (strncmp(line, "[Device]", line_length) == 0)
+            {
+                section = configuration_device;
+                continue;
+            }
+            if (strncmp(line, "[Remap]", line_length) == 0)
+            {
+                section = configuration_remap;
+                continue;
+            }
+            if (strncmp(line, "[Hyper]", line_length) == 0)
+            {
+                section = configuration_hyper;
+                continue;
+            }
+            if (strncmp(line, "[Bindings]", line_length) == 0)
+            {
+                section = configuration_bindings;
+                continue;
+            }
+            error("error: invalid section: %s\n", line);
+            section = configuration_invalid;
             continue;
         }
         // Read configurations
@@ -184,6 +192,11 @@ int read_configuration()
                     int toCode = convertKeyStringToCode(token);
                     keymap[fromCode].sequence[index++] = toCode;
                 }
+                break;
+            }
+            case configuration_invalid:
+            {
+                error("error: ignoring line in invalid section: %s\n", line);
                 break;
             }
             case configuration_none:
