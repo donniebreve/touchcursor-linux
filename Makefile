@@ -14,7 +14,8 @@ out_path = ./out
 binary = touchcursor
 # LIBS = -lm
 cc = gcc
-cflags = -pthread -g -Wall
+cflags = -Wall
+ldflags = -pthread
 # All .h files
 headers = $(wildcard $(src_path)/*.h)
 # All .c files, excluding test.c
@@ -26,7 +27,7 @@ objects = $(patsubst $(src_path)/%.c, $(obj_path)/%.o, $(sources))
 # This is the main target of the make file
 $(out_path)/$(binary): $(objects)
 	@mkdir --parents $(out_path)
-	$(cc) $(objects) $(cflags) -o $@
+	$(cc) $(objects) $(cflags) $(ldflags) -o $@
 
 # Each .o file depends on its .c file and .h file (we include all headers)
 $(obj_path)/%.o: $(src_path)/%.c $(headers)
