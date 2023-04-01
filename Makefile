@@ -27,7 +27,7 @@ objects = $(patsubst $(src_path)/%.c, $(obj_path)/%.o, $(sources))
 # This is the main target of the make file
 $(out_path)/$(binary): $(objects)
 	@mkdir --parents $(out_path)
-	$(cc) $(objects) $(cflags) $(ldflags) -o $@
+	$(cc) $(objects) $(ldflags) -o $@
 
 # Each .o file depends on its .c file and .h file (we include all headers)
 $(obj_path)/%.o: $(src_path)/%.c $(headers)
