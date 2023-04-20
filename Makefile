@@ -23,7 +23,6 @@ sources = $(filter-out $(src_path)/test.c, $(wildcard $(src_path)/*.c))
 # Replace .c files with obj/filename.o from sources
 objects = $(patsubst $(src_path)/%.c, $(obj_path)/%.o, $(sources))
 
-# The binary depends on all .o files
 # This is the main target of the make file
 $(out_path)/$(binary): $(objects)
 	@mkdir --parents $(out_path)
@@ -34,9 +33,20 @@ $(obj_path)/%.o: $(src_path)/%.c $(headers)
 	@mkdir --parents $(obj_path)
 	$(cc) $(cflags) -c $< -o $@
 
+# This is the test binary target of the make file
+test_binary = touchcursor_test
+test_sources = $(filter-out $(src_path)/emit.c $(src_path)/main.c, $(wildcard $(src_path)/*.c))
+test_objects = $(patsubst $(src_path)/%.c, $(obj_path)/%.o, $(test_sources))
+$(out_path)/$(test_binary): $(test_objects)
+	@mkdir --parents $(out_path)
+	$(cc) $(test_objects) $(ldflags) -o $@
+
+check: $(out_path)/$(test_binary)
+	$(out_path)/$(test_binary)
+
 clean:
 	-rm --force obj/*.o
-	-rm --force $(out_path)/$(binary)
+	-rm --force $(out_path)/*
 
 debug: $(out_path)/$(binary)
 	@echo "# Stopping the service"

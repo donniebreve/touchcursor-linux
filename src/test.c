@@ -1,5 +1,5 @@
 // build
-// gcc -Wall src/queue.c src/keys.c src/strings.c src/binding.c src/config.c src/mapper.c src/test.c  -o out/test
+// gcc -Wall src/queue.c src/keys.c src/strings.c src/binding.c src/config.c src/mapper.c src/test.c -o out/test
 // run
 // ./out/test
 
