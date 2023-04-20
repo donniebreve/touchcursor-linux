@@ -58,6 +58,9 @@ static void send_mapped_key(int code, int value)
         {
             break;
         }
+        // if the key is also a modifier, release the original too
+        if(isModifier(code))
+            emit(EV_KEY, code, value);
         emit(EV_KEY, output.sequence[i], value);
     }
 }
