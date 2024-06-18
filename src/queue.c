@@ -41,13 +41,13 @@ void enqueue(int value)
             return;
         }
     }
-    int index = (tail + 1) % length;
-    if (index == head)
+    int next = (tail + 1) % length;
+    if (next == head)
     {
         return;
     }
     store[tail] = value;
-    tail = index;
+    tail = next;
 }
 
 /**
