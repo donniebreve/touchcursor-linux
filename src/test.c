@@ -48,6 +48,11 @@ static struct test_keys test_keys[] = {
     {KEY_K, "m2"}, {KEY_DOWN, "layer_m2"}, // mapped
     {KEY_L, "m3"}, {KEY_RIGHT, "layer_m3"}, // mapped
 
+    {KEY_S, "seq"}, {KEY_A, "lseq"}, {KEY_1, "seq1"}, {KEY_2, "seq2"}, {KEY_3, "seq3"}, {KEY_4, "seq4"}, // short and long sequences
+
+    {KEY_R, "or1"}, {KEY_O, "or1_to"}, // other remap
+    {KEY_E, "mr2"}, {KEY_K, "mr2_to"}, {KEY_5, "layer_mr2"}, // mapped remap
+
     {KEY_SPACE, "hyper"},
 
     {0, NULL}
@@ -218,6 +223,20 @@ static void testNormalTyping()
     TYPE("hyper down, m1 tap, hyper up", EXPECT, "layer_m1 tap");
 
     TYPE("m1 down, hyper tap, m2 tap, m1 up", EXPECT, "m1 down, hyper tap, m2 tap, m1 up");
+
+    TYPE("hyper down, seq tap, hyper up", EXPECT, "seq1 down, seq2 down, seq1 up, seq2 up");
+
+    TYPE("hyper down, lseq tap, hyper up",
+        EXPECT, "seq1 down, seq2 down, seq3 down, seq4 down, seq1 up, seq2 up, seq3 up, seq4 up");
+
+    TYPE("or1 tap", EXPECT, "other tap");
+
+    TYPE("hyper down, or1 tap, hyper up", EXPECT, "hyper down, other tap, hyper up");
+
+    TYPE("mr2 tap", EXPECT, "m2 tap");
+
+    // Key is not remapped in hyper mode
+    TYPE("hyper down, mr2 tap, hyper up", EXPECT, "layer_mr2 tap");
 }
 
 /*
@@ -267,6 +286,17 @@ int main()
     keymap[KEY("m1")].sequence[0] = KEY("layer_m1");
     keymap[KEY("m2")].sequence[0] = KEY("layer_m2");
     keymap[KEY("m3")].sequence[0] = KEY("layer_m3");
+
+    keymap[KEY("seq")].sequence[0] = KEY("seq1");
+    keymap[KEY("seq")].sequence[1] = KEY("seq2");
+    keymap[KEY("lseq")].sequence[0] = KEY("seq1");
+    keymap[KEY("lseq")].sequence[1] = KEY("seq2");
+    keymap[KEY("lseq")].sequence[2] = KEY("seq3");
+    keymap[KEY("lseq")].sequence[3] = KEY("seq4");
+
+    remap[KEY("or1")] = KEY("other");
+    remap[KEY("mr2")] = KEY("m2");
+    keymap[KEY("mr2")].sequence[0] = KEY("layer_mr2");
 
     testNormalTyping();
     testFastTyping();
