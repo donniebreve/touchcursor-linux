@@ -6,25 +6,15 @@
 #include <linux/input.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "config.h"
 #include "keys.h"
+#include "strings.h"
 
-// minunit http://www.jera.com/techinfo/jtns/jtn002.html
-#define mu_assert(message, test)     \
-    do                               \
-    {                                \
-        if (!(test)) return message; \
-    } while (0)
-#define mu_run_test(test)               \
-    do                                  \
-    {                                   \
-        int result = test();            \
-        tests_run++;                    \
-        if (result != 0) return result; \
-    } while (0)
-static int tests_run;
+static int tests_run = 0;
+static int tests_failed = 0;
 
 // String for the full key event output
 static char output[256];
@@ -35,266 +25,236 @@ static char emitString[8];
 /*
  * Override of the emit function(s).
  */
-int emit(int type, int code, int value)
+void emit(int type, int code, int value)
 {
     sprintf(emitString, "%i:%i ", code, value);
     strcat(output, emitString);
-    return 0;
 }
 
 // Now include the mapper
 #include "mapper.h"
 
+struct test_keys
+{
+    int code;
+    char* name;
+};
+static struct test_keys test_keys[] = {
+    {KEY_LEFTSHIFT, "leftshift"}, // not mapped in layer
+
+    {KEY_O, "other"}, // not mapped in layer
+
+    {KEY_J, "m1"}, {KEY_LEFT, "layer_m1"}, // mapped
+    {KEY_K, "m2"}, {KEY_DOWN, "layer_m2"}, // mapped
+    {KEY_L, "m3"}, {KEY_RIGHT, "layer_m3"}, // mapped
+
+    {KEY_SPACE, "hyper"},
+
+    {0, NULL}
+};
+
+/*
+ * Get code for named key.
+ */
+static int lookup_key_code(char* name)
+{
+    for (int i = 0; test_keys[i].name != NULL; i++)
+    {
+        if (strcmp(name, test_keys[i].name) == 0) return test_keys[i].code;
+    }
+    return 0;
+}
+
 /*
  * Simulates typing keys.
- * The method arguments should be number of arguments, then pairs of key code and key value.
  */
-static void type(int num, ...)
+static int type(char* keys, char* expect)
 {
+    tests_run++;
     for (int i = 0; i < 256; i++) output[i] = 0;
-    va_list arguments;
-    va_start(arguments, num);
-    for (int i = 0; i < num; i += 2)
+
+    char* _keys = malloc(strlen(keys) + 1);
+    strcpy(_keys, keys);
+    char* tokens = _keys;
+    char* token;
+    while ((token = strsep(&tokens, ",")) != NULL)
     {
-        int code = va_arg(arguments, int);
-        int value = va_arg(arguments, int);
-        processKey(EV_KEY, code, value);
+        token = trim_string(token);
+        char* key = token;
+        strsep(&token, " ");
+        char* action = token;
+        if (key == NULL || action == NULL)
+        {
+            printf("  FAIL [%s]\n    missing key or action '%s %s'\n", keys, key, action);
+            free(_keys);
+            return 1;
+        }
+
+        int code = lookup_key_code(key);
+        if (code == 0)
+        {
+            printf("  FAIL [%s]\n    invalid key '%s'\n", keys, key);
+            free(_keys);
+            return 1;
+        }
+
+        if (strcmp(action, "down") == 0)
+        {
+            processKey(EV_KEY, code, 1);
+        }
+        else if (strcmp(action, "up") == 0)
+        {
+            processKey(EV_KEY, code, 0);
+        }
+        else if (strcmp(action, "tap") == 0)
+        {
+            processKey(EV_KEY, code, 1);
+            processKey(EV_KEY, code, 0);
+        }
+        else
+        {
+            printf("  FAIL [%s]\n    invalid key action '%s'\n", keys, action);
+            free(_keys);
+            return 1;
+        }
     }
-    va_end(arguments);
+    free(_keys);
+
+    char expected_output[256];
+    char* eo = expected_output;
+    char* _expect = malloc(strlen(expect) + 1);
+    strcpy(_expect, expect);
+    tokens = _expect;
+    if (*tokens == '\0')
+    {
+        expected_output[0] = '\0';
+    }
+    else while ((token = strsep(&tokens, ",")) != NULL)
+    {
+        token = trim_string(token);
+        char* key = token;
+        strsep(&token, " ");
+        char* action = token;
+        if (key == NULL || action == NULL)
+        {
+            printf("  FAIL [%s]\n    missing key or action '%s %s'\n", keys, key, action);
+            free(_expect);
+            return 1;
+        }
+
+        int code = lookup_key_code(key);
+        if (code == 0)
+        {
+            printf("  FAIL [%s]\n    invalid expect key '%s'\n", keys, key);
+            free(_expect);
+            return 1;
+        }
+
+        if (strcmp(action, "down") == 0)
+        {
+            sprintf(eo, "%d:1 ", code);
+        }
+        else if (strcmp(action, "up") == 0)
+        {
+            sprintf(eo, "%d:0 ", code);
+        }
+        else if (strcmp(action, "tap") == 0)
+        {
+            sprintf(eo, "%d:1 %d:0 ", code, code);
+        }
+        else
+        {
+            printf("  FAIL [%s]\n    invalid expect action '%s'\n", keys, action);
+            free(_expect);
+            return 1;
+        }
+
+        eo += strlen(eo);
+    }
+    free(_expect);
+
+    if (strcmp(output, expected_output) != 0)
+    {
+        printf("  FAIL [%s]\n    expected: [%s]\n    expected: '%s'\n      output: '%s'\n", keys, expect, expected_output, output);
+        return 1;
+    }
+    printf("  pass [%s]\n      output: '%s'\n", keys, output);
+    return 0;
 }
+#define TYPE(keys, ignore, expect) tests_failed += type(keys, expect)
+
+/*
+ * Get code for named key or output error message.
+ */
+static int lookup_key_code_with_error(char* name)
+{
+    int code = lookup_key_code(name);
+    if (code == 0)
+    {
+        printf("ERROR invalid key '%s'\n", name);
+    }
+    return code;
+}
+#define KEY(name) lookup_key_code_with_error(name)
 
 /*
  * Tests for normal (slow) typing.
  * These tests should rarely have overlapping key events.
  */
-static int testNormalTyping()
+static void testNormalTyping()
 {
-    // Space down, up
-    char* description = "sd, su";
-    char* expected = "57:1 57:0 ";
-    type(4, KEY_SPACE, 1, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    printf("Normal typing tests...\n");
 
-    // Space down, up, down, up
-    description = "sd, su, sd, su";
-    expected = "57:1 57:0 57:1 57:0 ";
-    type(8, KEY_SPACE, 1, KEY_SPACE, 0, KEY_SPACE, 1, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("hyper tap", EXPECT, "hyper tap");
 
-    // Other down, Space down, up, Other up
-    description = "od, sd, su, ou";
-    expected = "31:1 57:1 57:0 31:0 ";
-    type(8, KEY_S, 1, KEY_SPACE, 1, KEY_SPACE, 0, KEY_S, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("hyper tap, hyper tap", EXPECT, "hyper tap, hyper tap");
 
-    // Space down, Other down, up, Space up
-    description = "sd, od, ou, su";
-    expected = "57:1 31:1 31:0 57:0 ";
-    type(8, KEY_SPACE, 1, KEY_S, 1, KEY_S, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("other down, hyper tap, other up", EXPECT, "other down, hyper tap, other up");
 
-    // Mapped down, Space down, up, Mapped up
-    description = "md, sd, su, mu";
-    expected = "36:1 57:1 57:0 36:0 ";
-    type(8, KEY_J, 1, KEY_SPACE, 1, KEY_SPACE, 0, KEY_J, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("hyper down, other tap, hyper up", EXPECT, "hyper down, other tap, hyper up");
 
-    // Space down, Mapped down, up, Space up
-    description = "sd, md, mu, su";
-    expected = "105:1 105:0 ";
-    type(8, KEY_SPACE, 1, KEY_J, 1, KEY_J, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("m1 down, hyper tap, m1 up", EXPECT, "m1 down, hyper tap, m1 up");
 
-    // Mapped down, Space down, up, Different mapped down, up, Mapped up
-    description = "m1d, sd, su, m2d, m2u, m1u";
-    expected = "36:1 57:1 57:0 23:1 23:0 36:0 ";
-    type(12, KEY_J, 1, KEY_SPACE, 1, KEY_SPACE, 0, KEY_I, 1, KEY_I, 0, KEY_J, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("hyper down, m1 tap, hyper up", EXPECT, "layer_m1 tap");
 
-    return 0;
+    TYPE("m1 down, hyper tap, m2 tap, m1 up", EXPECT, "m1 down, hyper tap, m2 tap, m1 up");
 }
 
 /*
  * Tests for fast typing.
  * These tests should have many overlapping key events.
  */
-static int testFastTyping()
+static void testFastTyping()
 {
-    // Space down, mapped down, space up, mapped up
-    // The mapped key should not be converted
-    char* description = "sd, md, su, mu";
-    char* expected = "57:1 36:1 57:0 36:0 ";
-    type(8, KEY_SPACE, 1, KEY_J, 1, KEY_SPACE, 0, KEY_J, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    printf("Fast typing tests...\n");
 
-    // Mapped down, space down, mapped up, space up
+    // The mapped key should not be converted
+    TYPE("hyper down, m1 down, hyper up, m1 up", EXPECT, "hyper down, m1 down, hyper up, m1 up");
+
     // The mapped key should not be converted
     // This is not out of order, remember space down does not emit anything
-    description = "md, sd, mu, su";
-    expected = "36:1 36:0 57:1 57:0 ";
-    type(8, KEY_J, 1, KEY_SPACE, 1, KEY_J, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("m1 down, hyper down, m1 up, hyper up", EXPECT, "m1 tap, hyper tap");
 
-    // Space down, mapped1 down, mapped2 down, space up, mapped1 up, mapped2 up
     // The mapped keys should be sent converted
     // Extra up events are sent, but that does not matter
-    description = "sd, m1d, m2d, su, m1u, m2u";
-    expected = "105:1 103:1 105:0 103:0 36:0 23:0 ";
-    type(12, KEY_SPACE, 1, KEY_J, 1, KEY_I, 1, KEY_SPACE, 0, KEY_J, 0, KEY_I, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
+    TYPE("hyper down, m1 down, m2 down, hyper up, m1 up, m2 up", EXPECT, "layer_m1 down, layer_m2 down, layer_m1 up, layer_m2 up, m1 up, m2 up");
 
-    // Space down, mapped1 down, mapped2 down, mapped3 down, space up, mapped1 up, mapped2 up, mapped3 up
     // The mapped keys should be sent converted
     // Extra up events are sent, but that does not matter
-    description = "sd, m1d, m2d, m3d, su, m1u, m2u, m3u";
-    expected = "105:1 103:1 106:1 105:0 103:0 106:0 36:0 23:0 38:0 ";
-    type(16, KEY_SPACE, 1, KEY_J, 1, KEY_I, 1, KEY_L, 1, KEY_SPACE, 0, KEY_J, 0, KEY_I, 0, KEY_L, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
-
-    return 0;
+    TYPE("hyper down, m1 down, m2 down, m3 down, hyper up, m1 up, m2 up, m3 up",
+        EXPECT, "layer_m1 down, layer_m2 down, layer_m3 down, layer_m1 up, layer_m2 up, layer_m3 up, m1 up, m2 up, m3 up");
 }
 
 /*
  * Tests for fast typing.
  * These tests should have many overlapping key events.
  */
-static int testSpecialTyping()
+static void testSpecialTyping()
 {
-    // Space down, other (modifier) down, other (modifier) up, space up
+    printf("Special typing tests...\n");
+
     // The key should be output, hyper mode not retained
-    char* description = "sd, od, ou, su";
-    char* expected = "42:1 42:0 57:1 57:0 ";
-    type(8, KEY_SPACE, 1, KEY_LEFTSHIFT, 1, KEY_LEFTSHIFT, 0, KEY_SPACE, 0);
-    if (strcmp(expected, output) != 0)
-    {
-        printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
-        return 1;
-    }
-    else
-    {
-        printf("[%s] passed. expected: '%s', output: '%s'\n", description, expected, output);
-    }
-
-    return 0;
-}
-
-/*
- * Simple method for running all tests.
- */
-static int runTests()
-{
-    // default config
-    hyperKey = KEY_SPACE;
-    keymap[KEY_I].sequence[0] = KEY_UP;
-    keymap[KEY_J].sequence[0] = KEY_LEFT;
-    keymap[KEY_K].sequence[0] = KEY_DOWN;
-    keymap[KEY_L].sequence[0] = KEY_RIGHT;
-    keymap[KEY_H].sequence[0] = KEY_PAGEUP;
-    keymap[KEY_N].sequence[0] = KEY_PAGEDOWN;
-    keymap[KEY_U].sequence[0] = KEY_HOME;
-    keymap[KEY_O].sequence[0] = KEY_END;
-    keymap[KEY_M].sequence[0] = KEY_DELETE;
-    keymap[KEY_P].sequence[0] = KEY_BACKSPACE;
-    keymap[KEY_Y].sequence[0] = KEY_INSERT;
-
-    mu_run_test(testNormalTyping);
-    printf("Normal typing tests passed.\n");
-
-    mu_run_test(testFastTyping);
-    printf("Fast typing tests passed.\n");
-
-    mu_run_test(testSpecialTyping);
-    printf("Special typing tests passed.\n");
-
-    return 0;
+    TYPE("hyper down, leftshift tap, hyper up", EXPECT, "leftshift tap, hyper tap");
 }
 
 /*
@@ -302,16 +262,27 @@ static int runTests()
  */
 int main()
 {
-    int result = runTests();
-    if (result != 0)
+    // default config
+    hyperKey = KEY("hyper");
+    keymap[KEY("m1")].sequence[0] = KEY("layer_m1");
+    keymap[KEY("m2")].sequence[0] = KEY("layer_m2");
+    keymap[KEY("m3")].sequence[0] = KEY("layer_m3");
+
+    testNormalTyping();
+    testFastTyping();
+    testSpecialTyping();
+
+    printf("\nTests run: %d\n", tests_run);
+    if (tests_failed > 0)
     {
-        printf("Some tests failed\n");
+        printf("*** %d tests FAILED ***\n", tests_failed);
     }
     else
     {
         printf("All tests passed!\n");
     }
-    printf("Tests run: %d\n", tests_run);
+
+    return tests_failed;
 }
 
 // Sample tests from touchcursor source
