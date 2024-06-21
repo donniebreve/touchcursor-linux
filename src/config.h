@@ -18,7 +18,7 @@ extern int hyperKey;
  * */
 struct key_output
 {
-	int sequence[MAX_SEQUENCE];
+    int sequence[MAX_SEQUENCE];
 };
 extern struct key_output keymap[256];
 
