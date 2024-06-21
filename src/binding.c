@@ -105,7 +105,7 @@ int bind_input()
         return EXIT_FAILURE;
     }
     // Open the keyboard device
-    log("info: attempting to cature: '%s'\n", input_event_path);
+    log("info: attempting to capture: '%s'\n", input_event_path);
     input_file_descriptor = open(input_event_path, O_RDONLY);
     if (input_file_descriptor < 0)
     {
