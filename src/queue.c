@@ -18,6 +18,7 @@ void clearQueue()
     {
         store[i] = 0;
     }
+    head = tail = 0;
 }
 
 /**
@@ -73,4 +74,33 @@ int peek()
         return 0;
     }
     return store[head];
+}
+
+/**
+ * Remove key from the queue.
+ * */
+void removeKeyFromQueue(int value)
+{
+    for (int i = head; i != tail; i = (i + 1) % length)
+    {
+        if (store[i] == value)
+        {
+            if (i == head)
+            {
+                head = (head + 1) % length;
+            }
+            else
+            {
+                if (i != tail)
+                {
+                    for (int j = (i + 1) % length; j != tail; j = (j + 1) % length, i++)
+                    {
+                        store[i] = store[j];
+                    }
+                }
+                tail = (length + tail - 1) % length;
+            }
+            return;
+        }
+    }
 }

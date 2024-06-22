@@ -44,6 +44,10 @@ static void send_mapped_key(int code, int value)
         }
         emit(EV_KEY, output.sequence[i], value);
     }
+    if (value == 0)
+    {
+        removeKeyFromQueue(code);
+    }
 }
 
 /**
@@ -68,6 +72,10 @@ static void send_remapped_key(int code, int value)
         code = remap[code];
     }
     emit(EV_KEY, code, value);
+    if (value == 0)
+    {
+        removeKeyFromQueue(code);
+    }
 }
 
 /**
