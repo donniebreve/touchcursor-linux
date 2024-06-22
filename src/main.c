@@ -187,6 +187,12 @@ static void clean_up()
  * */
 int main(int argc, char* argv[])
 {
+    if (argc > 1)
+    {
+        error("error: invalid arguments\n");
+        return EXIT_FAILURE;
+    }
+
     main_thread_identifier = pthread_self();
     if (attach_signal_handlers() != EXIT_SUCCESS)
     {
