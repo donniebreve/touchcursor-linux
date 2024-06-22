@@ -249,10 +249,10 @@ static int testFastTyping()
 static int testSpecialTyping()
 {
     // Space down, other (modifier) down, other (modifier) up, space up
-    // The key should be output, hyper mode retained
+    // The key should be output, hyper mode not retained
     char* description = "sd, od, ou, su";
-    char* expected = "42:1 42:0 ";
-    type(6, KEY_SPACE, 1, KEY_LEFTSHIFT, 1, KEY_LEFTSHIFT, 0, KEY_SPACE, 0);
+    char* expected = "42:1 42:0 57:1 57:0 ";
+    type(8, KEY_SPACE, 1, KEY_LEFTSHIFT, 1, KEY_LEFTSHIFT, 0, KEY_SPACE, 0);
     if (strcmp(expected, output) != 0)
     {
         printf("[%s] failed. expected: '%s', output: '%s'\n", description, expected, output);
