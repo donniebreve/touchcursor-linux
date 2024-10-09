@@ -76,6 +76,16 @@ install:
 	cp --force $(service) $(SERVICEPATH)
 	@echo ""
 
+	@echo "# Do you want to add the configuration with current all keyboards?(y/N)"
+	@read -r answer; \
+	if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+		echo "\nUpdating configuration with all keyboards..."; \
+		bash ./scripts/update_conf_with_all_keyboards.sh; \
+	else \
+		echo "\nSkipping update conf"; \
+	fi
+	@echo ""
+	
 	@echo "# Copying default configuration file to $(CONFIGPATH)/$(config)"
 	mkdir --parents $(CONFIGPATH)
 	-cp --no-clobber $(config) $(CONFIGPATH)
