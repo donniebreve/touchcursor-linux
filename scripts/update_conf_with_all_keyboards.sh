@@ -1,5 +1,13 @@
 #!/bin/bash
-CONFIG_FILE="touchcursor.conf"
+
+# Check if an argument is provided
+if [ $# -eq 0 ]; then
+    echo "Error: No configuration file specified."
+    echo "Usage: $0 <path_to_config_file>"
+    exit 1
+fi
+
+CONFIG_FILE="$1"
 
 # Set permissions to allow read and write for all users
 chmod 644 "$CONFIG_FILE"
