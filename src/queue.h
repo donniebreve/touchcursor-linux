@@ -26,4 +26,9 @@ int dequeue();
  * */
 int peek();
 
+/**
+ * Remove key from the queue.
+ * */
+void removeKeyFromQueue(int value);
+
 #endif
