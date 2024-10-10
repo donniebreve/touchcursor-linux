@@ -9,7 +9,7 @@ fi
 
 CONFIG_FILE="$1"
 
-# Set permissions to allow read and write for all users
+# Set permissions to allow write for owner and read for others
 chmod 644 "$CONFIG_FILE"
 
 # Check if the config file exists
