@@ -66,7 +66,7 @@ if [ -s "$TEMP_FILE" ] && [ -r "$TEMP_FILE" ]; then
     mv "$TEMP_FILE" "$CONFIG_FILE"
     chmod 644 "$CONFIG_FILE"
     
-    echo "Global configuration in $CONFIG_FILE has been updated."
+    echo "Configuration ($CONFIG_FILE) has been updated."
     echo "A backup of the original configuration has been saved as ${CONFIG_FILE}.bak"
     echo "All keyboard devices have been added to the [Device] section."
 else
