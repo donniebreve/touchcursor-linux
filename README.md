@@ -28,6 +28,7 @@ y - insert
 1. Clone or download this repo
 2. 'make' to build the application
 3. 'make install' to install the application
+4. To add all your current keyboards to the configuration, type 'y' when prompted.
 5. Modify the config file (`~/.config/touchcursor/touchcursor.conf`) to your liking
 6. Restart the service `systemctl --user restart touchcursor.service`
 
