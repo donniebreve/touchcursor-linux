@@ -75,10 +75,19 @@ install:
 	mkdir --parents $(SERVICEPATH)
 	cp --force $(service) $(SERVICEPATH)
 	@echo ""
-
+	
 	@echo "# Copying default configuration file to $(CONFIGPATH)/$(config)"
 	mkdir --parents $(CONFIGPATH)
 	-cp --no-clobber $(config) $(CONFIGPATH)
+	@echo ""
+
+	@echo "# Do you want to add all currently connected keyboards to your configuration? (y/N)"
+	@read -r answer; \
+	if [ "$$answer" = "y" ] || [ "$$answer" = "Y" ]; then \
+		echo ""; \
+		echo "Updating configuration..."; \
+		bash ./scripts/update_conf_with_all_keyboards.sh $(CONFIGPATH)/$(config); \
+	fi
 	@echo ""
 
 	@echo "# Enabling and starting the service"
