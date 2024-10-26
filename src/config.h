@@ -1,6 +1,8 @@
 #ifndef config_h
 #define config_h
 
+#define MAX_KEYMAP_CODE 255
+#define MAX_KEYMAP (MAX_KEYMAP_CODE + 1)
 #define MAX_SEQUENCE 4
 
 /**
@@ -20,12 +22,12 @@ struct key_output
 {
     int sequence[MAX_SEQUENCE];
 };
-extern struct key_output keymap[256];
+extern struct key_output keymap[MAX_KEYMAP];
 
 /**
  * Map for permanently remapped keys.
  * */
-extern int remap[256];
+extern int remap[MAX_KEYMAP];
 
 /**
  * Finds the configuration file location.
