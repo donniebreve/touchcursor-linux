@@ -22,7 +22,7 @@ int input_file_descriptor = -1;
 // The output device
 char output_device_name[32] = "Virtual TouchCursor Keyboard";
 char output_sys_path[256] = { '\0' };
-int output_device_keystate[MAX_KEYBIT];
+int output_device_keystate[KEY_MAX];
 int output_file_descriptor = -1;
 
 /**
@@ -179,7 +179,7 @@ int bind_output()
         return EXIT_FAILURE;
     }
     // Enable the set of KEY events
-    for (int i = 0; i <= MAX_KEYBIT; i++)
+    for (int i = 0; i <= KEY_MAX; i++)
     {
         int result = ioctl(output_file_descriptor, UI_SET_KEYBIT, i);
         if (result < 0)
@@ -218,7 +218,7 @@ int bind_output()
  * */
 void release_output_keys()
 {
-    for (int i = 0; i < MAX_KEYBIT; i++)
+    for (int i = 0; i < KEY_MAX; i++)
     {
         if (output_device_keystate[i] > 0)
         {

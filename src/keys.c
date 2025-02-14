@@ -922,6 +922,10 @@ int convertKeyStringToCode(char* keyString)
     else if (strcmp(keyString, "ALS_TOGGLE") == 0) return KEY_ALS_TOGGLE;
     else if (strcmp(keyString, "KEY_ROTATE_LOCK_TOGGLE") == 0) return KEY_ROTATE_LOCK_TOGGLE;
     else if (strcmp(keyString, "ROTATE_LOCK_TOGGLE") == 0) return KEY_ROTATE_LOCK_TOGGLE;
+    else if (strcmp(keyString, "KEY_RIGHT_UP") == 0) return KEY_RIGHT_UP;
+    else if (strcmp(keyString, "KEY_RIGHT_DOWN") == 0) return KEY_RIGHT_DOWN;
+    else if (strcmp(keyString, "KEY_LEFT_UP") == 0) return KEY_LEFT_UP;
+    else if (strcmp(keyString, "KEY_LEFT_DOWN") == 0) return KEY_LEFT_DOWN;
     else return 0;
 }
 

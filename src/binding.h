@@ -1,17 +1,7 @@
 #ifndef binding_h
 #define binding_h
 
-/**
- * @brief The upper limit for enabling key events.
- *
- * There used to be KEY_MAX here, but that seems to be causing issues:
- * At one point there was an issue where the virtual device could not be created
- * if keys up to KEY_MAX (767) were included. 572 came from iterating down
- * from KEY_MAX until things started working again. Not sure what the underlying
- * cause is. For further reference, see
- * https://github.com/donniebreve/touchcursor-linux/pull/39#issuecomment-1000901050.
- */
-#define MAX_KEYBIT 572
+#include <linux/input-event-codes.h>
 
 /**
  * The name of the input device.
@@ -55,7 +45,7 @@ extern char output_sys_path[256];
 /**
  * The output device key state.
  * */
-extern int output_device_keystate[MAX_KEYBIT];
+extern int output_device_keystate[KEY_MAX];
 /**
  * The file descriptor for the output device.
  * */
