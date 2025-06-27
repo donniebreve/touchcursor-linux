@@ -14,10 +14,9 @@
 #include "emit.h"
 #include "strings.h"
 
-// The input device
-char input_device_name[256] = "Unknown";
-char input_event_path[256] = { '\0' };
-int input_file_descriptor = -1;
+// The input devices
+struct input_device input_devices[MAX_INPUT_DEVICES];
+int input_device_count = 0;
 
 // The output device
 char output_device_name[32] = "Virtual TouchCursor Keyboard";
@@ -30,11 +29,20 @@ int output_file_descriptor = -1;
  *
  * @param name The device name.
  * @param number The device instance number.
+ * @param device_index The index where to store the found device.
  */
-int find_device_event_path(char* name, int number)
+int find_device_event_path(char* name, int number, int device_index)
 {
+    if (device_index >= MAX_INPUT_DEVICES)
+    {
+        error("error: maximum number of input devices (%d) exceeded\n", MAX_INPUT_DEVICES);
+        return EXIT_FAILURE;
+    }
+
     log("info: searching for device %s:%i\n", name, number);
-    input_event_path[0] = '\0';
+    input_devices[device_index].event_path[0] = '\0';
+    input_devices[device_index].active = 0;
+    
     FILE* devices_file = fopen("/proc/bus/input/devices", "r");
     if (!devices_file)
     {
@@ -67,7 +75,7 @@ int find_device_event_path(char* name, int number)
         if (matched_name)
         {
             if (!starts_with(line, "H: Handlers")) continue;
-            strcpy(input_device_name, name);
+            strcpy(input_devices[device_index].name, name);
             char* tokens = line;
             char* token = strsep(&tokens, "=");
             while (tokens != NULL)
@@ -75,9 +83,9 @@ int find_device_event_path(char* name, int number)
                 token = strsep(&tokens, " ");
                 if (starts_with(token, "event"))
                 {
-                    strcat(input_event_path, "/dev/input/");
-                    strcat(input_event_path, token);
-                    log("info: found the device event path: %s\n", input_event_path);
+                    strcat(input_devices[device_index].event_path, "/dev/input/");
+                    strcat(input_devices[device_index].event_path, token);
+                    log("info: found the device event path: %s\n", input_devices[device_index].event_path);
                     found_event = 1;
                     break;
                 }
@@ -95,59 +103,138 @@ int find_device_event_path(char* name, int number)
 }
 
 /**
- * Binds to the input device using ioctl.
+ * Binds to a specific input device using ioctl.
+ * 
+ * @param device_index The index of the device to bind.
  * */
-int bind_input()
+int bind_input_device(int device_index)
 {
-    if (input_event_path[0] == '\0')
+    if (device_index >= MAX_INPUT_DEVICES || device_index < 0)
     {
-        error("error: no input device was configured (or the event path was not found).\n");
+        error("error: invalid device index: %d\n", device_index);
         return EXIT_FAILURE;
     }
+
+    struct input_device* device = &input_devices[device_index];
+    
+    if (device->event_path[0] == '\0')
+    {
+        error("error: no input device was configured at index %d (or the event path was not found).\n", device_index);
+        return EXIT_FAILURE;
+    }
+    
     // Open the keyboard device
-    log("info: attempting to capture: '%s'\n", input_event_path);
-    input_file_descriptor = open(input_event_path, O_RDONLY);
-    if (input_file_descriptor < 0)
+    log("info: attempting to capture: '%s'\n", device->event_path);
+    device->file_descriptor = open(device->event_path, O_RDONLY);
+    if (device->file_descriptor < 0)
     {
         error("error: failed to open the input device: %s\n", strerror(errno));
         return EXIT_FAILURE;
     }
+    
     // Retrieve the device name
-    if (ioctl(input_file_descriptor, EVIOCGNAME(sizeof(input_device_name)), input_device_name) < 0)
+    if (ioctl(device->file_descriptor, EVIOCGNAME(sizeof(device->name)), device->name) < 0)
     {
         error("error: failed to get the device name (EVIOCGNAME: %s)\n", strerror(errno));
+        close(device->file_descriptor);
         return EXIT_FAILURE;
     }
+    
     // Check that the device is not our virtual device
-    if (strcasestr(input_device_name, "Virtual TouchCursor Keyboard") != NULL)
+    if (strcasestr(device->name, "Virtual TouchCursor Keyboard") != NULL)
     {
         error("error: you cannot capture the virtual device: %s\n", strerror(errno));
+        close(device->file_descriptor);
         return EXIT_FAILURE;
     }
+    
     // Allow last key press to go through
     // Grabbing the keys too quickly prevents the last key up event from being sent
     // https://bugs.freedesktop.org/show_bug.cgi?id=101796
     usleep(200 * 1000);
+    
     // Grab keys from the input device
-    if (ioctl(input_file_descriptor, EVIOCGRAB, 1) < 0)
+    if (ioctl(device->file_descriptor, EVIOCGRAB, 1) < 0)
     {
         error("error: failed to capture the device (EVIOCGRAB: %s)\n", strerror(errno));
+        close(device->file_descriptor);
         return EXIT_FAILURE;
     }
-    log("info: successfully captured input device: %s (%s)\n", input_device_name, input_event_path);
+    
+    device->active = 1;
+    log("info: successfully captured input device: %s (%s)\n", device->name, device->event_path);
     return EXIT_SUCCESS;
 }
 
 /**
- * Releases the input device.
+ * Binds to all configured input devices using ioctl.
+ * */
+int bind_input()
+{
+    int success_count = 0;
+    int at_least_one_configured = 0;
+    
+    for (int i = 0; i < input_device_count; i++)
+    {
+        if (input_devices[i].event_path[0] != '\0')
+        {
+            at_least_one_configured = 1;
+            if (bind_input_device(i) == EXIT_SUCCESS)
+            {
+                success_count++;
+            }
+        }
+    }
+    
+    if (!at_least_one_configured)
+    {
+        error("error: no input devices were configured\n");
+        return EXIT_FAILURE;
+    }
+    
+    if (success_count == 0)
+    {
+        error("error: failed to bind to any input devices\n");
+        return EXIT_FAILURE;
+    }
+    
+    log("info: successfully bound to %d of %d configured input devices\n", success_count, input_device_count);
+    return EXIT_SUCCESS;
+}
+
+/**
+ * Releases a specific input device.
+ * 
+ * @param device_index The index of the device to release.
+ * */
+int release_input_device(int device_index)
+{
+    if (device_index >= MAX_INPUT_DEVICES || device_index < 0)
+    {
+        return EXIT_SUCCESS;
+    }
+    
+    struct input_device* device = &input_devices[device_index];
+    
+    if (device->file_descriptor > 0 && device->active)
+    {
+        log("info: releasing: %s (%s)\n", device->name, device->event_path);
+        ioctl(device->file_descriptor, EVIOCGRAB, 0);
+        close(device->file_descriptor);
+        device->active = 0;
+        device->file_descriptor = -1;
+    }
+    return EXIT_SUCCESS;
+}
+
+/**
+ * Releases all input devices.
  * */
 int release_input()
 {
-    if (input_file_descriptor > 0)
+    for (int i = 0; i < input_device_count; i++)
     {
-        log("info: releasing: %s (%s)\n", input_device_name, input_event_path);
-        ioctl(input_file_descriptor, EVIOCGRAB, 0);
-        close(input_file_descriptor);
+        release_input_device(i);
     }
     return EXIT_SUCCESS;
 }
