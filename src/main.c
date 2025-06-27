@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/inotify.h>
+#include <sys/select.h>
 #include <unistd.h>
 
 #include "binding.h"
@@ -167,6 +168,21 @@ static int release_configuration_file_watch()
 }
 
 /**
+ * Checks if any input devices are currently active.
+ * */
+static int has_active_devices()
+{
+    for (int i = 0; i < input_device_count; i++)
+    {
+        if (input_devices[i].active)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/**
  * Releases the input and output devices.
  * */
 static void clean_up()
@@ -224,9 +240,13 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     log("info: running\n");
-    // Read events
+    // Read events from multiple devices
     struct input_event event;
     ssize_t result;
+    fd_set read_fds;
+    int max_fd;
+    struct timeval timeout;
+    
     while (1)
     {
         if (should_reload)
@@ -242,7 +262,7 @@ int main(int argc, char* argv[])
             }
             if (bind_input() != EXIT_SUCCESS)
             {
-                error("error: could not capture the keyboard device\n");
+                error("error: could not capture any keyboard devices\n");
             }
             should_reload = 0;
         }
@@ -252,48 +272,114 @@ int main(int argc, char* argv[])
             clean_up();
             return EXIT_SUCCESS;
         }
-        if (input_event_path[0] == '\0')
+        if (!has_active_devices())
         {
-            log("info: you may update the configuration file to have the application attempt discovering the input device again.\n");
+            log("info: no active input devices. You may update the configuration file to have the application attempt discovering input devices again.\n");
             sleep(UINT_MAX); // this can be interrupted
             continue;
         }
-        result = read(input_file_descriptor, &event, sizeof(event));
-        if (result == (ssize_t)-1)
+
+        // Prepare file descriptor set for select()
+        FD_ZERO(&read_fds);
+        max_fd = -1;
+        
+        for (int i = 0; i < input_device_count; i++)
+        {
+            if (input_devices[i].active && input_devices[i].file_descriptor > 0)
+            {
+                FD_SET(input_devices[i].file_descriptor, &read_fds);
+                if (input_devices[i].file_descriptor > max_fd)
+                {
+                    max_fd = input_devices[i].file_descriptor;
+                }
+            }
+        }
+        
+        if (max_fd == -1)
+        {
+            // No active devices
+            continue;
+        }
+        
+        // Set timeout for select (1 second)
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
+        
+        // Wait for activity on any of the file descriptors
+        int select_result = select(max_fd + 1, &read_fds, NULL, NULL, &timeout);
+        
+        if (select_result == -1)
         {
             if (errno == EINTR)
             {
-                continue;
+                continue; // Interrupted by signal, continue
             }
             else
             {
-                error("error: unable to read input event: %s\n", strerror(errno));
-                log("info: exiting\n");
+                error("error: select failed: %s\n", strerror(errno));
                 clean_up();
                 return EXIT_FAILURE;
             }
         }
-        if (result == (ssize_t)0)
+        else if (select_result == 0)
         {
-            error("error: received EOF while reading input events\n");
-            log("info: exiting\n");
-            clean_up();
-            return EXIT_FAILURE;
-        }
-        if (result != sizeof(event))
-        {
-            warn("warning: partial input event received\n");
+            // Timeout, continue the loop to check for reload/exit signals
             continue;
         }
-        // We only want to manipulate key presses
-        if (event.type == EV_KEY
-            && (event.value == 0 || event.value == 1 || event.value == 2))
+        
+        // Check which device has data available
+        for (int i = 0; i < input_device_count; i++)
         {
-            processKey(event.type, event.code, event.value);
-        }
-        else
-        {
-            emit(event.type, event.code, event.value);
+            if (input_devices[i].active && 
+                input_devices[i].file_descriptor > 0 && 
+                FD_ISSET(input_devices[i].file_descriptor, &read_fds))
+            {
+                result = read(input_devices[i].file_descriptor, &event, sizeof(event));
+                if (result == (ssize_t)-1)
+                {
+                    if (errno == EINTR)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        error("error: unable to read input event from device %s: %s\n", 
+                              input_devices[i].name, strerror(errno));
+                        // Mark device as inactive but continue with other devices
+                        input_devices[i].active = 0;
+                        close(input_devices[i].file_descriptor);
+                        input_devices[i].file_descriptor = -1;
+                        continue;
+                    }
+                }
+                if (result == (ssize_t)0)
+                {
+                    error("error: received EOF while reading input events from device %s\n", 
+                          input_devices[i].name);
+                    // Mark device as inactive but continue with other devices
+                    input_devices[i].active = 0;
+                    close(input_devices[i].file_descriptor);
+                    input_devices[i].file_descriptor = -1;
+                    continue;
+                }
+                if (result != sizeof(event))
+                {
+                    warn("warning: partial input event received from device %s\n", 
+                         input_devices[i].name);
+                    continue;
+                }
+                
+                // We only want to manipulate key presses
+                if (event.type == EV_KEY
+                    && (event.value == 0 || event.value == 1 || event.value == 2))
+                {
+                    processKey(event.type, event.code, event.value);
+                }
+                else
+                {
+                    emit(event.type, event.code, event.value);
+                }
+            }
         }
     }
 }
