@@ -100,6 +100,15 @@ int read_configuration()
     // Zero the existing arrays
     memset(keymap, 0, sizeof(keymap));
     memset(remap, 0, sizeof(remap));
+    
+    // Reset input device count and clear device array
+    input_device_count = 0;
+    memset(input_devices, 0, sizeof(input_devices));
+    for (int i = 0; i < MAX_INPUT_DEVICES; i++)
+    {
+        input_devices[i].file_descriptor = -1;
+        input_devices[i].active = 0;
+    }
 
     // Open the configuration file
     FILE* configuration_file = fopen(configuration_file_path, "r");
@@ -156,9 +165,16 @@ int read_configuration()
             {
                 char* name = line;
                 int number = get_device_number(name);
-                if (find_device_event_path(name, number) == EXIT_SUCCESS)
+                if (input_device_count < MAX_INPUT_DEVICES)
                 {
-                    section = configuration_none;
+                    if (find_device_event_path(name, number, input_device_count) == EXIT_SUCCESS)
+                    {
+                        input_device_count++;
+                    }
+                }
+                else
+                {
+                    error("error: maximum number of input devices (%d) reached, ignoring device: %s\n", MAX_INPUT_DEVICES, name);
                 }
                 break;
             }

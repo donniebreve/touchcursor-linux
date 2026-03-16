@@ -3,34 +3,58 @@
 
 #include <linux/input-event-codes.h>
 
+#define MAX_INPUT_DEVICES 32
+
 /**
- * The name of the input device.
+ * Structure representing an input device.
  * */
-extern char input_device_name[256];
+struct input_device
+{
+    char name[256];
+    char event_path[256];
+    int file_descriptor;
+    int active;
+};
+
 /**
- * The event path for the input device.
+ * Array of input devices.
  * */
-extern char input_event_path[256];
+extern struct input_device input_devices[MAX_INPUT_DEVICES];
 /**
- * The file descriptor for the input device.
+ * Number of active input devices.
  * */
-extern int input_file_descriptor;
+extern int input_device_count;
 
 /**
  * Searches /proc/bus/input/devices for the device event.
  *
  * @param name The device name.
  * @param number The device instance number.
+ * @param device_index The index where to store the found device.
  */
-int find_device_event_path(char* name, int number);
+int find_device_event_path(char* name, int number, int device_index);
 
 /**
- * Binds to the input device using ioctl.
+ * Binds to a specific input device using ioctl.
+ * 
+ * @param device_index The index of the device to bind.
+ * */
+int bind_input_device(int device_index);
+
+/**
+ * Binds to all configured input devices using ioctl.
  * */
 int bind_input();
 
 /**
- * Releases the input device.
+ * Releases a specific input device.
+ * 
+ * @param device_index The index of the device to release.
+ * */
+int release_input_device(int device_index);
+
+/**
+ * Releases all input devices.
  * */
 int release_input();
 
