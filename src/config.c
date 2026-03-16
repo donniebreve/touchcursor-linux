@@ -15,8 +15,8 @@
 char configuration_file_path[256];
 
 int hyperKey;
-struct key_output keymap[256] = { 0 };
-int remap[256] = { 0 };
+struct key_output keymap[MAX_KEYMAP] = { 0 };
+int remap[MAX_KEYMAP] = { 0 };
 
 /**
  * Checks for the device number if it is configured.
@@ -83,20 +83,24 @@ int find_configuration_file()
     return EXIT_FAILURE;
 }
 
-static enum sections {
+enum sections
+{
     configuration_none,
     configuration_device,
     configuration_remap,
     configuration_hyper,
     configuration_bindings,
     configuration_invalid
-} section;
+};
 
 /**
  * Reads the configuration file.
  * */
 int read_configuration()
 {
+    // Clear existing hyper key
+    hyperKey = 0;
+
     // Zero the existing arrays
     memset(keymap, 0, sizeof(keymap));
     memset(remap, 0, sizeof(remap));
@@ -112,8 +116,11 @@ int read_configuration()
     char* buffer = NULL;
     size_t length = 0;
     ssize_t result = -1;
+    int lineno = 0;
+    enum sections section = configuration_none;
     while ((result = getline(&buffer, &length, configuration_file)) != -1)
     {
+        lineno++;
         char* line = trim_comment(buffer);
         line = trim_string(line);
         // Comment or empty line
@@ -145,7 +152,7 @@ int read_configuration()
                 section = configuration_bindings;
                 continue;
             }
-            error("error: invalid section: %s\n", line);
+            error("error[%d]: invalid section: %s\n", lineno, line);
             section = configuration_invalid;
             continue;
         }
@@ -167,8 +174,23 @@ int read_configuration()
                 char* tokens = line;
                 char* token = strsep(&tokens, "=");
                 int fromCode = convertKeyStringToCode(token);
+                if (fromCode == 0)
+                {
+                    error("error[%d]: invalid key: expected a single key: %s\n", lineno, token);
+                    continue;
+                }
+                if (fromCode > MAX_KEYMAP_CODE)
+                {
+                    error("error[%d]: left key code must be less than %d: %s\n", lineno, MAX_KEYMAP, token);
+                    continue;
+                }
                 token = strsep(&tokens, "=");
                 int toCode = convertKeyStringToCode(token);
+                if (toCode == 0)
+                {
+                    error("error[%d]: invalid key: expected a single key: %s\n", lineno, token);
+                    continue;
+                }
                 remap[fromCode] = toCode;
                 break;
             }
@@ -178,6 +200,16 @@ int read_configuration()
                 char* token = strsep(&tokens, "=");
                 token = strsep(&tokens, "=");
                 int code = convertKeyStringToCode(token);
+                if (code == 0)
+                {
+                    error("error[%d]: invalid key: expected a single key: %s\n", lineno, token);
+                    continue;
+                }
+                if (hyperKey != 0)
+                {
+                    error("error[%d]: hyper key set multiple times\n", lineno);
+                    continue;
+                }
                 hyperKey = code;
                 break;
             }
@@ -186,22 +218,42 @@ int read_configuration()
                 char* tokens = line;
                 char* token = strsep(&tokens, "=");
                 int fromCode = convertKeyStringToCode(token);
-                int index = 0;
-                while ((token = strsep(&tokens, ",")) != NULL && index < MAX_SEQUENCE)
+                if (fromCode == 0)
                 {
+                    error("error[%d]: invalid key: expected a single key: %s\n", lineno, token);
+                    continue;
+                }
+                if (fromCode > MAX_KEYMAP_CODE)
+                {
+                    error("error[%d]: left key code must be less than %d: %s\n", lineno, MAX_KEYMAP, token);
+                    continue;
+                }
+                int index = 0;
+                while ((token = strsep(&tokens, ",")) != NULL)
+                {
+                    if (index >= MAX_SEQUENCE)
+                    {
+                        error("error[%d]: exceeded limit of %d keys in sequence: %s\n", lineno, MAX_SEQUENCE, token);
+                        continue;
+                    }
                     int toCode = convertKeyStringToCode(token);
+                    if (toCode == 0)
+                    {
+                        error("error[%d]: invalid key: expected a single key or comma separated list of keys: %s\n", lineno, token);
+                        continue;
+                    }
                     keymap[fromCode].sequence[index++] = toCode;
                 }
                 break;
             }
             case configuration_invalid:
             {
-                error("error: ignoring line in invalid section: %s\n", line);
-                break;
+                error("error[%d]: ignoring line in invalid section: %s\n", lineno, line);
+                continue;
             }
             case configuration_none:
-            default:
             {
+                error("error[%d]: ignoring line not in a section: %s\n", lineno, line);
                 continue;
             }
         }
